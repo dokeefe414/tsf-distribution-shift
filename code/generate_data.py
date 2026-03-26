@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -28,6 +29,14 @@ x = np.concatenate([x1, x2])
 noise = np.random.normal(0, 1, n)
 y = x**2 + 3 + noise
 
+# Create DataFrame
+df = pd.DataFrame({
+    "time": t,
+    "value": y
+})
+
+# Save to CSV
+df.to_csv("../data/synthetic/synthetic_shift_v1.csv", index=False)
 # Plot the time series
 plt.figure(figsize=(10, 5))
 plt.plot(t, y, label="Synthetic Time Series")
