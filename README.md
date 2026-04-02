@@ -20,9 +20,9 @@ This project explores model robustness in controlled settings using synthetic da
 - Evaluate performance before and after shifts
 
 ## Current Progress
-- Studied stochastic process-based data generation
-- Designed synthetic data framework
+- Created synthetic data with a plot showing the shift
 - Planning implementation of distribution shift scenarios
+- Start using state-spaced models/ARIMA on the synthetic data
 
 ## Next Steps
 - Implement synthetic data generator
