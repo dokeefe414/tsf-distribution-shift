@@ -41,8 +41,8 @@ for k in range(1, n):
     # Innovation (error)
     innovation = y[k] - x_pred
 
-    # 🔥 Adapt R based on error magnitude
-    R = (1 - alpha) * R + alpha * (innovation**2)
+    #  Adapt R based on error magnitude
+    R = (1 - alpha) * R + alpha * min(innovation**2, 100)
 
     # Update
     K = P_pred / (P_pred + R)
