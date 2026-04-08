@@ -1,1 +1,9 @@
-Bring in MLP
+## Notes
+Bring in MLP to give a smooth aproximation
+Shrink time window
+Tradeoffs
+## Adaptive KF
+Qt,Rt=fixed
+Sliding Window Variance 
+Innovation Based Adaptive Estimation
+Change-Point Triggered Reset (Not Sure)
