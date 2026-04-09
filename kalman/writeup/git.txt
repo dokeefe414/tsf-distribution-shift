@@ -1,9 +1,71 @@
-## Notes
-Bring in MLP to give a smooth aproximation
-Shrink time window
-Tradeoffs
-## Adaptive KF
-Qt,Rt=fixed
-Sliding Window Variance 
-Innovation Based Adaptive Estimation
-Change-Point Triggered Reset (Not Sure)
+# Kalman Filter Behavior Under Distribution Shift
+
+## Overview
+This project studies how different variants of the Kalman Filter behave when applied to a time series with a controlled distribution shift. The goal is to evaluate how well each method adapts when the underlying data-generating process changes.
+
+## Data Generation
+A synthetic time series was created where the underlying distribution changes halfway through the sequence. Specifically:
+
+- First half: \( X_t \sim \mathcal{N}(10, 1) \)
+- Second half: \( X_t \sim \mathcal{N}(20, 2) \)
+
+The observed series is generated as:
+\[Y_t = X_t^2 + 3 + z\]
+where\( z \sim \mathcal{N}(0,1) \).
+
+This introduces both a nonlinear transformation and a distribution shift in mean and variance.
+
+---
+
+## Methods
+
+### 1. Standard Kalman Filter
+The standard Kalman Filter assumes fixed process noise (Q) and measurement noise (R). It is designed for systems with stable statistical properties.
+
+### 2. Adaptive Kalman Filter
+The adaptive version updates Q and R dynamically based on the innovation (prediction error). This allows the model to adjust when the data distribution changes.
+
+### 3. Sliding Window Kalman Filter
+This approach estimates measurement noise using the variance of a recent window of observations. It prioritizes recent data over older data.
+
+### 4. Change-Point Kalman Filter
+This method detects large prediction errors and resets the uncertainty (covariance) when a potential distribution shift is detected.
+
+---
+
+## Results and Observations
+
+### Before Distribution Shift
+All methods perform similarly and track the data well. The system behaves in a stable and predictable manner.
+
+### After Distribution Shift
+
+- **Standard Kalman Filter**:
+  - Adapts slowly to the new distribution
+  - Exhibits significant lag
+  - Assumes the system remains stable
+
+- **Adaptive Kalman Filter**:
+  - Responds faster than the standard filter
+  - Adjusts parameters based on increased error
+  - Balances stability and responsiveness
+
+- **Sliding Window Kalman Filter**:
+  - Adapts quickly using recent data
+  - More responsive but introduces additional noise
+  - Demonstrates a tradeoff between accuracy and variability
+
+- **Change-Point Kalman Filter**:
+  - Reacts most aggressively
+  - Quickly adjusts after detecting a shift
+  - May introduce instability if threshold is too sensitive
+
+---
+
+## Conclusion
+
+The experiments show that the standard Kalman Filter performs well under stable conditions but struggles when the underlying distribution shifts. Adaptive methods improve performance by allowing the model to respond to changes in the data.
+
+Each adaptive approach introduces tradeoffs between responsiveness and stability. Methods that adapt quickly are more effective under distribution shift but may produce noisier estimates.
+
+These results highlight the importance of accounting for non-stationarity in time series modeling.
