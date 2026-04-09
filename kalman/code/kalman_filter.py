@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # -----------------------------
-# 1. Generate Synthetic Data (same as project)
+# 1. Generate Synthetic Data 
 # -----------------------------
 np.random.seed(42)
 
