@@ -1,0 +1,79 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib
+
+matplotlib.use('TkAgg')
+
+# -----------------------------
+# 1. Load Complex Data
+# -----------------------------
+df = pd.read_csv("tsf-distribution-shift/data/synthetic/complex_time_series.csv")
+
+y = df["value"].values
+t = df["time"].values
+
+# -----------------------------
+# 2. Train/Test Split
+# -----------------------------
+train_size = 200  # train only on first regime
+
+train = y[:train_size]
+test = y[train_size:]
+
+# -----------------------------
+# 3. Fit ARIMA
+# -----------------------------
+model = ARIMA(train, order=(2,1,2))
+model_fit = model.fit()
+
+# -----------------------------
+# 4. Rolling Forecast (IMPORTANT)
+# -----------------------------
+predictions = list(train)
+
+history = list(train)
+
+for i in range(len(test)):
+    model = ARIMA(history, order=(2,1,2))
+    model_fit = model.fit()
+
+    yhat = model_fit.forecast()[0]
+    predictions.append(yhat)
+
+    # Add actual value to history (this is key)
+    history.append(test[i])
+
+# -----------------------------
+# 5. Convert to array
+# -----------------------------
+predictions = np.array(predictions)
+
+# -----------------------------
+# 6. Plot
+# -----------------------------
+plt.figure(figsize=(14,6))
+
+plt.plot(t, y, label="Actual Data")
+plt.plot(t, predictions, label="ARIMA Rolling Forecast", linewidth=2)
+
+plt.axvline(x=200, color='red', linestyle='--', label="Shift 1")
+plt.axvline(x=400, color='green', linestyle='--', label="Shift 2")
+
+plt.title("ARIMA on Complex Time Series")
+plt.xlabel("Time")
+plt.ylabel("Value")
+plt.legend()
+
+plt.savefig("tsf-distribution-shift/plots/arima_complex.png")
+plt.show()
+
+# -----------------------------
+# 7. Evaluate
+# -----------------------------
+mse_before = np.mean((y[:200] - predictions[:200])**2)
+mse_after = np.mean((y[200:] - predictions[200:])**2)
+
+print("MSE Before Shift:", mse_before)
+print("MSE After Shift:", mse_after)
