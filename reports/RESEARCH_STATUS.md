@@ -24,7 +24,9 @@
 
 Source records: [Transformer training run](transformer_experiment/initial_results.md), [confirmed linear comparison](transformer_experiment/linear_baseline_validation.md).
 
-**New Windows result:** The researcher ran the 32-position directional experiment and supplied the resulting heatmap screenshot. AR(1) was responsive only at position 32, and Transformer was most sensitive there with smaller responses at earlier positions. The exact native PNG and 64-row model/position summary still need publishing from Windows. See [observed directional findings](transformer_experiment/directional_findings_2026-10-20.md) and [publishing instructions](figures/README.md). The previous development-environment run is not an independent research replication.
+**Completed Windows directional study:** The researcher ran the 32-position experiment; AR(1) responded only at position 32, and the Transformer showed its strongest response there with smaller responses at earlier positions. The [native graph](figures/directional_sensitivity.png) is now uploaded to GitHub. Exact per-position CSVs still reside on the local Windows machine; the plot alone does not establish every numerical value.
+
+**New implementation:** [correlated multivariate Gaussian perturbations](CORRELATED_GAUSSIAN.md), comparing independent, positive temporal, negative temporal, and common-mode covariance with equal marginal variance. Code and mathematical tests passed in a separate development environment; results using the researcher's own Windows checkpoint have **not yet been collected**.
 
 ## Connecting the September advisor notes to completed work
 
@@ -33,8 +35,8 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 | Generator G, distribution choices | Gaussian AR(1), earlier shifted and complex synthetic datasets | Introduce one distribution change at a time |
 | Forecaster F | Custom, from-scratch attention encoder predicting one future scalar | Repeat training seeds; compare architectures/lengths |
 | Training/validation/testing, L, objective, optimizer | Chronological 70/15/15, L=32, normalized MSE, AdamW/early stopping | Vary L or regularization *one factor at a time* |
-| Input perturbation distribution | Independent Gaussian noise, variance sweep, and completed coordinate-wise study | Next: norm-matched multi-coordinate and correlated Gaussian directions |
-| Measure one-step response | Absolute forecast change, RMSE/NMSE, and reviewed 32-position directional plot | Publish exact coordinate sensitivities; then analyze norm-matched directions |
+| Input perturbation distribution | Magnitude sweep and coordinate-wise Gaussian study completed; covariance comparison coded | Run four-covariance experiment in VS Code and interpret paired effects |
+| Measure one-step response | Forecast response, RMSE/NMSE, 32-position graph; paired covariance metrics now coded | Assess how covariance shapes affect prediction without changing noise energy |
 | Interpretable comparator | Fitted linear AR(1) with theoretical response formula | Use it as validation when varying perturbation direction |
 | Long horizon and time scales | Not yet studied | Add rollouts and multiple lag scales later |
 | Statistical manifolds and information geometry | Conceptual discussion in HTML proposal | Define a specific Gaussian family/path and distance before coding |
@@ -42,9 +44,12 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 
 ## Immediate next deliverable
 
-1. Archive the actual Windows figure, exact directional CSVs and model metadata via **py code/publish_directional_results.py --label 2026-10-20**; instructions are in [figures/README.md](figures/README.md).
-2. Commit and push those curated files so the evidence is reproducible for your advisor.
-3. Prepare a concise results interpretation: AR(1) depends only on the most recent lag, while the trained Transformer is locally sensitive to earlier lags; smaller sensitivity is not necessarily higher accuracy.
-4. Next research task: compare **norm-matched perturbation directions**, then use **correlated multivariate Gaussian perturbations** to connect with the advisor's distribution and statistical-manifold questions.
+1. Pull the new code into VS Code, keeping the existing trained checkpoint and synthetic data.
+2. Run **`py code/test_correlated_gaussian.py`** to verify Gaussian covariance construction and theoretical controls.
+3. Run **`py code/correlated_gaussian_experiment.py`** with the default sigma=0.10 and 20 noise draws.
+4. Inspect `correlated_gaussian_matrices.png`, `correlated_gaussian_response.png`, and `correlated_gaussian_paired_effects.png`; report both sensitivity and accuracy.
+5. Check that AR(1)'s expected response remains unchanged across covariance patterns; investigate whether Transformer's paired differences are large relative to noise-draw variation.
+
+The [uploaded directional graph](figures/directional_sensitivity.png) and its interpretation are already preserved. Publishing the raw directional CSV remains optional if exact numerical follow-up analysis is needed.
 
 This repo documents **exploratory scientific results**. It does not claim that Transformers are generally more robust or that statistical geometry and long-horizon experiments have been performed.

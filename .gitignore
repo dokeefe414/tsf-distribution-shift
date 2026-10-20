@@ -22,3 +22,8 @@ reports/transformer_experiment/linear_baseline_parameters.json
 # Coordinate-wise input sensitivity experiments (regenerable)
 reports/transformer_experiment/directional_*.csv
 reports/transformer_experiment/directional_sensitivity.png
+
+# Reproducible correlated Gaussian experiment outputs; publish selected figures manually
+reports/transformer_experiment/correlated_gaussian_*.csv
+reports/transformer_experiment/correlated_gaussian_*.png
+reports/transformer_experiment/correlated_gaussian_config.json

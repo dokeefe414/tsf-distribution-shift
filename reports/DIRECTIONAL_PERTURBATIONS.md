@@ -1,6 +1,6 @@
 # Directional perturbation study: experiment protocol
 
-**Status:** The researcher has now generated the directional heatmap on Windows and provided a screenshot (October 20, 2026). The qualitative outcome is documented in [directional findings](transformer_experiment/directional_findings_2026-10-20.md). The exact native PNG/CSVs still need to be archived from that computer; see [publishing instructions](figures/README.md).
+**Status:** The researcher ran this experiment on Windows and uploaded the [original directional graph](figures/directional_sensitivity.png) to GitHub. See [directional findings](transformer_experiment/directional_findings_2026-10-20.md). Exact per-position CSVs remain local unless separately committed.
 
 ## Objective
 
@@ -70,7 +70,7 @@ The across-repeat standard deviation quantifies **variation from perturbation dr
 
 The deterministic smoke test passed locally. A complete default 32-position run with 12 repeats also completed locally using the retained starter model: the fitted AR(1) had zero response at positions 1–31, and position 32 gave approximately **0.08247** versus theoretical **0.08250**. The strongest Transformer response was also at position 32 (approximately **0.06702**), with smaller responses at some older observations.
 
-**The numbers in the previous paragraph are from the separate development-environment verification, NOT exact values read from the researcher's screenshot.** The user subsequently supplied a Windows-generated directional plot with the same qualitative pattern: AR(1) responds at position 32 only, while Transformer also responds weakly at older positions. The plot visually shows normalized sigma=0.1; the exact 32-position data will be published from the Windows files using the [publishing helper](../code/publish_directional_results.py).
+**The numbers in the previous paragraph are from the separate development-environment verification, NOT exact values read from the researcher's screenshot.** The user subsequently supplied a Windows-generated directional plot with the same qualitative pattern: AR(1) responds at position 32 only, while Transformer also responds weakly at older positions. The plot visually shows normalized sigma=0.1; the [original PNG](figures/directional_sensitivity.png) is now on GitHub, and exact CSVs can be published later using the [publishing helper](../code/publish_directional_results.py).
 
 ## Limitations and later extensions
 
@@ -82,7 +82,7 @@ The deterministic smoke test passed locally. A complete default 32-position run 
 
 ## Preserve this specific Windows run
 
-The current full-resolution figure and exact machine-generated measurements are in the locally ignored `reports/transformer_experiment/` directory. To publish these for your advisor, **do not rerun the experiment first**. Pull the latest code, then run:
+The original full-resolution directional figure is **already uploaded** at [figures/directional_sensitivity.png](figures/directional_sensitivity.png); the remaining machine-generated measurement CSVs are local. To publish the *exact CSV values and full provenance* if needed, **do not rerun the experiment first**. Pull the latest code, then run:
 
 ```powershell
 git pull origin main

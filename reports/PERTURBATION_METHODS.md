@@ -106,3 +106,14 @@ The initial Windows Transformer results are recorded in [initial_results.md](tra
 For each position j = 1,...,32, perturb ONLY that historical input coordinate with Gaussian noise of normalized standard deviation 0.10. Reuse the same perturbed test windows for both the fitted AR(1) and frozen Transformer. Record the change in prediction and accuracy relative to unchanged original targets. The [directional methods document](DIRECTIONAL_PERTURBATIONS.md) spells out the noise protocol, interpretation and expected analytical AR(1) behavior, and how to run the new code.
 
 The coordinate study probes which historical positions influence prediction and separates the results by model. It does **not** yet implement joint covariance perturbations, Riemannian distances, long-horizon rollouts or a surrogate fidelity loss.
+
+
+## Correlated multivariate Gaussian experiment (implemented, Windows run pending)
+
+The new [covariance study](CORRELATED_GAUSSIAN.md) introduces epsilon ~ N(0, sigma² C), with C chosen from four symmetric positive-definite 32x32 correlation patterns. Every C has diagonal 1, so each coordinate has noise variance sigma² and the expected squared perturbation norm equals 32*sigma². The only deliberate change is in off-diagonal temporal covariance.
+
+We use one independent Gaussian draw z per test window and repetition, then transform it using Cholesky factors of each C. Reusing z across conditions and applying the same resulting noisy windows to the frozen Transformer and training-fitted AR(1) provides a paired comparison. The original targets and forecaster weights stay fixed.
+
+We record the mean absolute forecast change and original-target RMSE separately; per-repeat paired differences relative to independent noise make small covariance effects easier to assess. The expected AR(1) response is theoretically invariant under these covariance conditions, since AR(1) depends only on the newest input and all profiles give that coordinate the same marginal variance.
+
+The mathematical construction and code passed a separate local test, but the researcher's Windows checkpoint has **not yet been evaluated with this experiment**. The run should be interpreted as controlled input-noise sensitivity, not proof of robustness to a changed generating distribution or a calculated statistical-manifold distance.

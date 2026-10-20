@@ -5,9 +5,9 @@
 
 ## Status and provenance
 
-The researcher has now run the directional sensitivity experiment and supplied a screenshot of its generated heatmap and line plot. This verifies that the graph was produced on the Windows machine. **The full-resolution PNG and numeric CSVs remain on that computer and were not included in the screenshot or uploaded to GitHub.** Therefore the values below are qualitative observations from the screenshot, not transcriptions of exact 32-position measurements.
+The researcher has now run the directional sensitivity experiment and supplied a screenshot of its generated heatmap and line plot. This verifies that the graph was produced on the Windows machine. **The full-resolution PNG was subsequently uploaded to GitHub** at [reports/figures/directional_sensitivity.png](../figures/directional_sensitivity.png). The exact numeric CSVs remain on that computer. Therefore the values below are qualitative observations from the screenshot, not transcriptions of exact 32-position measurements.
 
-For the exact figure and numbers, use [the publication helper](../../code/publish_directional_results.py) described in [the figures README](../figures/README.md). Do this **before rerunning the experiment** so the current outputs are preserved.
+For the exact figure, see [the original uploaded PNG](../figures/directional_sensitivity.png). For the exact per-position numerical values, the local CSVs can still be archived with [the optional publishing helper](../../code/publish_directional_results.py); preserve the current outputs before rerunning.
 
 ## Experimental setup
 

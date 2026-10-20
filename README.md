@@ -24,7 +24,8 @@ The current priority is question 2, using a deliberately simple synthetic baseli
 | 3. Classical methods | Rolling ARIMA, standard KF and adaptive KF comparisons | Implemented; methodology needs further refinement |
 | **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |
 | **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Completed successfully in VS Code; metrics recorded** |
-| **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Completed in VS Code; graph reviewed; exact CSV/PNG archive pending** |
+| **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Completed in VS Code; original plot uploaded to GitHub** |
+| **4d. Correlated Gaussian perturbations** | **Change input covariance without changing marginal noise variance** | **Implemented and locally tested; Windows run next** |
 | 5. Broader analysis | Covariance directions, distribution families, long-horizon forecasts, surrogate fidelity, information geometry | Planned |
 
 ## Run the new Transformer / perturbation experiment
@@ -40,8 +41,8 @@ Open this repository in Visual Studio Code. In a terminal opened at the reposito
     python code/linear_baseline_comparison.py
     python code/test_directional_perturbation.py
     python code/directional_perturbation.py
-    # To publish a completed directional run (does not retrain):
-    python code/publish_directional_results.py --label 2026-10-20
+    python code/test_correlated_gaussian.py
+    python code/correlated_gaussian_experiment.py
 
 If Windows uses the Python launcher, replace `python` with `py`. Running the scripts from the root is easiest, although the scripts resolve their project paths relative to their own files.
 
@@ -87,7 +88,9 @@ See [confirmed training and perturbation results](reports/transformer_experiment
 
 The fitted AR(1) versus Transformer comparison **also completed successfully in the researcher's Windows VS Code terminal**. Its fitted slope was 0.716396, with clean test RMSE **1.004406** (linear) versus **1.022539** (Transformer). At sigma=0.10, mean absolute forecast response was **0.082423** (linear) versus **0.070765** (Transformer). See the [confirmed comparison report](reports/transformer_experiment/linear_baseline_validation.md) and [recorded table](reports/transformer_experiment/observed_linear_comparison_2026-10-20.csv).
 
-**Directional sensitivity was also run successfully on Windows.** The screenshot shows that fitted AR(1) reacts only to the most recent input (position 32), while the Transformer shows smaller but nonzero responses to earlier positions. These are qualitative observations; the original full-resolution PNG and exact directional CSVs still reside on Windows. [Read the directional findings](reports/transformer_experiment/directional_findings_2026-10-20.md). To archive the exact results in GitHub, use [the publishing instructions](reports/figures/README.md).
+**Directional sensitivity was also run successfully on Windows.** The fitted AR(1) responds only to the most recent input (position 32), while the Transformer shows smaller nonzero responses to earlier positions. The [original directional PNG](reports/figures/directional_sensitivity.png) was subsequently uploaded directly to GitHub. The exact numeric directional CSVs have **not** been published. [Read the directional findings](reports/transformer_experiment/directional_findings_2026-10-20.md).
+
+**Next research experiment:** multivariate Gaussian input perturbations with four covariance structures but the same marginal noise variance. The new code and tests have been **verified in a separate local development environment**; this experiment has **not yet been executed on your Windows checkpoint**. See [correlated Gaussian methodology](reports/CORRELATED_GAUSSIAN.md).
 
 ### Understand the method
 
@@ -98,7 +101,9 @@ The fitted AR(1) versus Transformer comparison **also completed successfully in 
 - [Confirmed AR(1) versus Transformer comparison](reports/transformer_experiment/linear_baseline_validation.md) — Windows results, paired perturbations, theory and interpretation.
 - [Directional perturbation protocol](reports/DIRECTIONAL_PERTURBATIONS.md) — all 32 input positions, formulas, outputs and interpretation.
 - [Directional findings, October 20](reports/transformer_experiment/directional_findings_2026-10-20.md) — confirmed screenshot observations, with precise-value limitations.
-- [Publishing original results](reports/figures/README.md) — copy the native figure and CSVs from Windows into a version-controlled research archive.
+- [Uploaded directional graph](reports/figures/directional_sensitivity.png) — native image from the researcher's experiment.
+- [Correlated Gaussian experiment](reports/CORRELATED_GAUSSIAN.md) — covariance patterns, formulas, evaluation design, locally verified behavior and next commands.
+- [Correlated Gaussian code walkthrough](code/CORRELATED_GAUSSIAN_WALKTHROUGH.md) — line-by-line conceptual explanation of the new experiment.
 - [Research status and advisor roadmap](reports/RESEARCH_STATUS.md) — progress through the September meeting goals.
 - [New generator](code/generate_perturbation_data.py), [model/trainer](code/transformer_model.py), [experiment](code/perturbation_experiment.py).
 
@@ -133,6 +138,9 @@ A larger forecast response does **not** automatically imply worse forecasting ac
       test_linear_baseline.py              # NEW
       directional_perturbation.py          # NEW
       test_directional_perturbation.py     # NEW
+      correlated_gaussian_experiment.py    # NEW
+      test_correlated_gaussian.py          # NEW
+      CORRELATED_GAUSSIAN_WALKTHROUGH.md   # NEW
       publish_directional_results.py       # NEW, archive exact Windows outputs
       TRANSFORMER_WALKTHROUGH.md          # NEW
     data/synthetic/                      # baseline datasets and historical metrics
@@ -150,9 +158,9 @@ A larger forecast response does **not** automatically imply worse forecasting ac
         observed_linear_comparison_2026-10-20.csv # NEW
         directional_findings_2026-10-20.md # NEW, screenshot-based findings
     DIRECTIONAL_PERTURBATIONS.md           # NEW
+    CORRELATED_GAUSSIAN.md                # NEW
     figures/
-      README.md                            # NEW, publishing instructions
-      # Versioned PNG and CSV archived from Windows (pending)
+      directional_sensitivity.png         # Original uploaded graph
     RESEARCH_STATUS.md                     # NEW
     requirements-perturbation.txt         # NEW
 
@@ -162,4 +170,4 @@ The experiments generate datasets, checkpoint weights, per-draw statistics and P
 
 The generator, training and perturbation stages use fixed random seeds. Results can still vary across PyTorch versions, hardware, and platform configuration. The train/validation/test split uses chronological target indices; the validation/test *windows* may contain observations immediately preceding their split boundary, which is permitted in one-step forecasting when those observations are known at prediction time.
 
-This project is exploratory work in progress. Both the linear comparison **and the coordinate-wise directional experiment were run on Windows**; the directional screenshot was inspected. Precise directional CSV data and the native PNG have yet to be archived from that machine. After archiving, repeat model training across seeds, then investigate norm-matched directions, temporally correlated Gaussian noise, and longer-horizon forecasting.
+This project is exploratory work in progress. The linear and coordinate-wise comparisons ran on Windows; the directional image is uploaded. The new covariance experiment was tested in a separate local environment but still needs a run in VS Code using your existing trained model. After that, compare multiple training seeds, analyze norm-matched directions, and investigate longer-horizon forecasting.
