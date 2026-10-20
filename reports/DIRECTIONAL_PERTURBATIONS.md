@@ -1,6 +1,6 @@
 # Directional perturbation study: experiment protocol
 
-**Status:** New scripts are implemented and tested in the development environment; the researcher has not yet run them in VS Code. This document separates expected analytical behavior from newly collected results.
+**Status:** The researcher has now generated the directional heatmap on Windows and provided a screenshot (October 20, 2026). The qualitative outcome is documented in [directional findings](transformer_experiment/directional_findings_2026-10-20.md). The exact native PNG/CSVs still need to be archived from that computer; see [publishing instructions](figures/README.md).
 
 ## Objective
 
@@ -70,7 +70,7 @@ The across-repeat standard deviation quantifies **variation from perturbation dr
 
 The deterministic smoke test passed locally. A complete default 32-position run with 12 repeats also completed locally using the retained starter model: the fitted AR(1) had zero response at positions 1–31, and position 32 gave approximately **0.08247** versus theoretical **0.08250**. The strongest Transformer response was also at position 32 (approximately **0.06702**), with smaller responses at some older observations.
 
-**These numerical results are from a separate development-environment verification, not yet a verified Windows run.** They should not be reported as an independent research replication, and the resulting PNG/CSVs were not copied into Git. The first student-run results should be captured after executing the commands above.
+**The numbers in the previous paragraph are from the separate development-environment verification, NOT exact values read from the researcher's screenshot.** The user subsequently supplied a Windows-generated directional plot with the same qualitative pattern: AR(1) responds at position 32 only, while Transformer also responds weakly at older positions. The plot visually shows normalized sigma=0.1; the exact 32-position data will be published from the Windows files using the [publishing helper](../code/publish_directional_results.py).
 
 ## Limitations and later extensions
 
@@ -78,3 +78,18 @@ The deterministic smoke test passed locally. A complete default 32-position run 
 - Repeated noise draws and overlapping historical windows are not independent training replications. Avoid reporting confidence intervals as if every response were a separate independent data sample.
 - Measuring one coordinate at a time changes a specific feature. It does not necessarily preserve the joint distribution of a Gaussian AR process.
 - The next step is to compare **norm-matched multi-coordinate directions** (e.g., uniform/alternating/eigenvectors) and later correlated multivariate Gaussian noise, then examine behavior across multiple trained seeds and longer horizons.
+
+
+## Preserve this specific Windows run
+
+The current full-resolution figure and exact machine-generated measurements are in the locally ignored `reports/transformer_experiment/` directory. To publish these for your advisor, **do not rerun the experiment first**. Pull the latest code, then run:
+
+```powershell
+git pull origin main
+py code/publish_directional_results.py --label 2026-10-20
+git add reports/figures/
+git commit -m "Archive October 20 directional sensitivity figure and metrics"
+git push origin main
+```
+
+The publisher checks for 32 positions × 2 models, consistent repetitions and a single sigma, then copies the native PNG, summarized and per-repeat CSVs, and model configuration to versioned `reports/figures/` paths. It generates a linked Markdown report with the exact highest-response positions. It does **not** upload checkpoint weights. The qualitative screenshot report is at [directional findings](transformer_experiment/directional_findings_2026-10-20.md).

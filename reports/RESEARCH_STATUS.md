@@ -24,7 +24,7 @@
 
 Source records: [Transformer training run](transformer_experiment/initial_results.md), [confirmed linear comparison](transformer_experiment/linear_baseline_validation.md).
 
-**Separate development verification:** New directional scripts passed deterministic tests and a full default 32-position test in the development environment. Windows research run is still pending. See [Directional Protocol](DIRECTIONAL_PERTURBATIONS.md).
+**New Windows result:** The researcher ran the 32-position directional experiment and supplied the resulting heatmap screenshot. AR(1) was responsive only at position 32, and Transformer was most sensitive there with smaller responses at earlier positions. The exact native PNG and 64-row model/position summary still need publishing from Windows. See [observed directional findings](transformer_experiment/directional_findings_2026-10-20.md) and [publishing instructions](figures/README.md). The previous development-environment run is not an independent research replication.
 
 ## Connecting the September advisor notes to completed work
 
@@ -33,8 +33,8 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 | Generator G, distribution choices | Gaussian AR(1), earlier shifted and complex synthetic datasets | Introduce one distribution change at a time |
 | Forecaster F | Custom, from-scratch attention encoder predicting one future scalar | Repeat training seeds; compare architectures/lengths |
 | Training/validation/testing, L, objective, optimizer | Chronological 70/15/15, L=32, normalized MSE, AdamW/early stopping | Vary L or regularization *one factor at a time* |
-| Input perturbation distribution | Independent Gaussian noise, variance sweep | Move from isotropic to coordinate and covariance directions |
-| Measure one-step response | Absolute forecast change plus RMSE/NMSE vs unchanged targets | Quantify positional sensitivity and directional anisotropy |
+| Input perturbation distribution | Independent Gaussian noise, variance sweep, and completed coordinate-wise study | Next: norm-matched multi-coordinate and correlated Gaussian directions |
+| Measure one-step response | Absolute forecast change, RMSE/NMSE, and reviewed 32-position directional plot | Publish exact coordinate sensitivities; then analyze norm-matched directions |
 | Interpretable comparator | Fitted linear AR(1) with theoretical response formula | Use it as validation when varying perturbation direction |
 | Long horizon and time scales | Not yet studied | Add rollouts and multiple lag scales later |
 | Statistical manifolds and information geometry | Conceptual discussion in HTML proposal | Define a specific Gaussian family/path and distance before coding |
@@ -42,9 +42,9 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 
 ## Immediate next deliverable
 
-1. On Windows, pull the latest version.
-2. Run **py code/test_directional_perturbation.py** and **py code/directional_perturbation.py** using the saved checkpoint.
-3. Inspect the heatmap and CSV. Expect fitted AR(1) to react only to the most recent lag. Observe, rather than assume, how the Transformer reacts to earlier lags.
-4. Bring a short table of top-response positions, the clean RMSE values, and the distinction between *sensitivity* and *accuracy* to the next advisor meeting.
+1. Archive the actual Windows figure, exact directional CSVs and model metadata via **py code/publish_directional_results.py --label 2026-10-20**; instructions are in [figures/README.md](figures/README.md).
+2. Commit and push those curated files so the evidence is reproducible for your advisor.
+3. Prepare a concise results interpretation: AR(1) depends only on the most recent lag, while the trained Transformer is locally sensitive to earlier lags; smaller sensitivity is not necessarily higher accuracy.
+4. Next research task: compare **norm-matched perturbation directions**, then use **correlated multivariate Gaussian perturbations** to connect with the advisor's distribution and statistical-manifold questions.
 
 This repo documents **exploratory scientific results**. It does not claim that Transformers are generally more robust or that statistical geometry and long-horizon experiments have been performed.
