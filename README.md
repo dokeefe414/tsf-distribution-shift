@@ -22,7 +22,7 @@ The current priority is question 2, using a deliberately simple synthetic baseli
 | 1. Simple shifting synthetic data | Abrupt mean/variance changes and nonlinear observation rule | Implemented |
 | 2. More challenging time series | AR dependencies, nonlinear term, changing seasonality, outliers and varying noise | Implemented |
 | 3. Classical methods | Rolling ARIMA, standard KF and adaptive KF comparisons | Implemented; methodology needs further refinement |
-| **4. Perturbation response** | **AR(1) baseline, custom Transformer, Gaussian input perturbations** | **Initial implementation complete; exploratory results** |
+| **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |\n| **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Implemented and validated locally; ready to run in VS Code** |
 | 5. Broader analysis | Covariance directions, distribution families, long-horizon forecasts, surrogate fidelity, information geometry | Planned |
 
 ## Run the new Transformer / perturbation experiment
@@ -33,11 +33,11 @@ Open this repository in Visual Studio Code. In a terminal opened at the reposito
     python code/generate_perturbation_data.py
     python code/test_perturbation_pipeline.py
     python code/transformer_model.py
-    python code/perturbation_experiment.py
+    python code/perturbation_experiment.py\n    python code/test_linear_baseline.py\n    python code/linear_baseline_comparison.py
 
 If Windows uses the Python launcher, replace `python` with `py`. Running the scripts from the root is easiest, although the scripts resolve their project paths relative to their own files.
 
-The first script creates the data. The test script checks splits, shapes, and the network's forward/backward pass without training. Training writes a model checkpoint and held-out predictions. The final script generates perturbation measurements and a response plot.
+The generator creates the data, and the first smoke test checks split boundaries and the network's forward/backward pass. Training writes a model checkpoint and held-out predictions. The perturbation script generates the initial response plot. The **last two commands** test and compare a training-fitted linear AR(1) predictor against the same frozen Transformer, using the same test targets and paired noise draws.
 
 **No pretrained forecasting model is used.** The Transformer-style block explicitly implements multi-head scaled dot-product attention using query, key and value projections in PyTorch.
 
@@ -62,17 +62,34 @@ The first script creates the data. The test script checks splits, shapes, and th
 
 The same trained forecaster is used for all perturbation levels. The model sees only historical inputs for each target, not the target itself or later values.
 
+### Successful execution and recorded results (October 20, 2026)
+
+The scripts were run successfully in VS Code on Windows. The training smoke test passed, and Transformer training stopped after 10 epochs with the best validation loss at epoch 5.
+
+| Confirmed result from Windows run | Value |
+| --- | ---: |
+| Clean test MSE | 1.045586 |
+| Clean test MAE | 0.808803 |
+| Best normalized validation MSE | 0.495638 |
+| Mean absolute response, sigma=0.01 | 0.007119 |
+| Mean absolute response, sigma=0.10 | 0.070765 |
+| Mean absolute response, sigma=0.20 | 0.140584 |
+
+See [confirmed training and perturbation results](reports/transformer_experiment/initial_results.md), with [epoch-by-epoch training losses](reports/transformer_experiment/observed_training_2026-10-20.csv) and the [recorded 30-repeat summary](reports/transformer_experiment/observed_perturbation_2026-10-20.csv).
+
+The linear AR(1) comparison has also been **run and tested in a separate local validation** (not yet confirmed on your Windows checkout). See [linear-versus-Transformer comparison](reports/transformer_experiment/linear_baseline_validation.md). Run `py code/linear_baseline_comparison.py` locally after `git pull origin main` to reproduce it with your saved model.
+
 ### Understand the method
 
 - [Research proposal (HTML)](reports/perturbation_proposal.html) — objectives, mathematical setup, justified distributions and future research directions.
 - [Perturbation methodology](reports/PERTURBATION_METHODS.md) — data flow, attention mathematics, leakage prevention, loss and evaluation.
 - [Transformer code walkthrough](code/TRANSFORMER_WALKTHROUGH.md) — explanations tied to the source code.
-- [Exploratory first-run results](reports/transformer_experiment/initial_results.md) — observations and limitations; regenerated outputs are local.
+- [Confirmed Windows run](reports/transformer_experiment/initial_results.md) — actual console results, training losses, sensitivity and forecast error.\n- [Linear baseline validation](reports/transformer_experiment/linear_baseline_validation.md) — compared fitted AR(1) and Transformer using paired perturbations; explains limits.
 - [New generator](code/generate_perturbation_data.py), [model/trainer](code/transformer_model.py), [experiment](code/perturbation_experiment.py).
 
 ### What the first results do *not* demonstrate
 
-A larger forecast response does **not** automatically imply worse forecasting accuracy; they are measured separately. This is a stationary baseline, not yet a controlled distribution-shift experiment. A single training seed does not establish general behavior; repeated training seeds, simple statistical/linear baselines, uncertainty intervals and sensitivity to the chosen window length belong in later experiments.
+A larger forecast response does **not** automatically imply worse forecasting accuracy; they are measured separately. This is a stationary baseline, not yet a controlled distribution-shift experiment. A single training seed does not establish general behavior; repeated training seeds, uncertainty intervals and sensitivity to the chosen window length belong in later experiments. The new linear comparison is a **baseline**, not evidence that one architecture is always superior.
 
 ## Earlier distribution-shift research
 
@@ -96,7 +113,7 @@ A larger forecast response does **not** automatically imply worse forecasting ac
       generate_perturbation_data.py       # NEW
       transformer_model.py                # NEW
       perturbation_experiment.py          # NEW
-      test_perturbation_pipeline.py       # NEW
+      test_perturbation_pipeline.py       # NEW\n      linear_baseline_comparison.py        # NEW\n      test_linear_baseline.py              # NEW
       TRANSFORMER_WALKTHROUGH.md          # NEW
     data/synthetic/                      # baseline datasets and historical metrics
     kalman/                              # earlier KF work
@@ -106,13 +123,13 @@ A larger forecast response does **not** automatically imply worse forecasting ac
       perturbation_proposal.html          # NEW
       PERTURBATION_METHODS.md             # NEW
       transformer_experiment/
-        initial_results.md               # NEW
+        initial_results.md               # NEW\n        observed_training_2026-10-20.csv  # NEW, printed training losses\n        observed_perturbation_2026-10-20.csv # NEW, printed summaries\n        linear_baseline_validation.md     # NEW
     requirements-perturbation.txt         # NEW
 
-The new experiment generates its CSV, model weights, per-draw statistics, and plots locally. Those derived outputs are git-ignored to keep the repository focused on code, documentation, and reproducibility.
+The experiments generate datasets, checkpoint weights, per-draw statistics and PNG plots locally. Those large/reproducible outputs are git-ignored; the repository **does retain** small CSV snapshots transcribed from the confirmed Windows console output, code, and Markdown reports for reproducibility.
 
 ## Reproducibility and limitations
 
 The generator, training and perturbation stages use fixed random seeds. Results can still vary across PyTorch versions, hardware, and platform configuration. The train/validation/test split uses chronological target indices; the validation/test *windows* may contain observations immediately preceding their split boundary, which is permitted in one-step forecasting when those observations are known at prediction time.
 
-This project is exploratory work in progress. The next research step is to compare perturbation responses across independent training seeds and a simple baseline before moving to correlated Gaussian directions and longer-horizon responses.
+This project is exploratory work in progress. The fitted linear baseline is now implemented as the next check. After reproducing it in VS Code, compare perturbation responses across independent training seeds, different noise directions, and eventually correlated Gaussian inputs and longer-horizon forecasts.

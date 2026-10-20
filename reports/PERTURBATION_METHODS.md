@@ -84,3 +84,19 @@ A future interpretable surrogate `S` could be trained to approximate Transformer
 4. Include a linear AR(1) baseline, which is appropriate for the selected generator.
 5. Use matched clean and perturbed test inputs, a fixed pretrained checkpoint, and common evaluation targets.
 6. Be explicit that the current experiments are exploratory and do not prove robustness under regime shifts.
+
+## Implemented AR(1) baseline comparison
+
+The new script `code/linear_baseline_comparison.py` fits `z[t] = intercept + slope * z[t-1]` by ordinary least squares on **training target indices only**. It uses the same normalized series as the Transformer. The fit learns its slope; it does not use the generator's true slope 0.7. Both models produce one-step forecasts for the same test times.
+
+For every sigma and repetition, the script draws Gaussian noise **once**, applies it to the same historical test windows for both models, and evaluates responses and accuracy against the same original targets. The Transformer checkpoint is held fixed. These paired perturbations reduce between-model variation from unrelated random noise.
+
+Because only the last coordinate affects the fitted AR(1), its theoretical mean absolute response under isotropic Gaussian perturbations is:
+
+`E|delta| = abs(slope) * sigma * training_std * sqrt(2/pi)`.
+
+This provides a transparent analytical prediction to compare against empirical perturbation results. The Transformer may depend on any input position, so its response reflects the learned attention and forecasting head, not necessarily the underlying generator.
+
+Both scripts save per-draw and mean-summary CSVs, along with original-unit RMSE and fixed-training-variance NMSE. The comparison generates a two-panel plot separating output sensitivity from forecast error.
+
+The initial Windows Transformer results are recorded in [initial_results.md](transformer_experiment/initial_results.md). A separately executed local validation of the baseline comparison is documented in [linear_baseline_validation.md](transformer_experiment/linear_baseline_validation.md). The student's own fitted-baseline comparison must be run after pulling the new code to confirm the result for the Windows checkpoint.

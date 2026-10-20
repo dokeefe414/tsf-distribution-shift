@@ -1,38 +1,56 @@
-# Initial Transformer perturbation experiment (exploratory)
+# First Transformer perturbation run — confirmed on Windows
 
-These measurements come from the first locally run starter experiment (training seed 42, perturbation seed 123). The original local experiment used the same AR(1) generator and core model/training/perturbation settings as the documented scripts. **They are not the result of a new GitHub Actions or remote training run.** Re-run the scripts to produce checkpoint, per-draw CSV, and updated metrics on your machine.
+**Date:** 2026-10-20  
+**Provenance:** VS Code PowerShell output provided by the researcher after running scripts in the cloned GitHub repository. Values in the version-controlled CSV snapshots below are transcribed from the displayed terminal (rounded to the printed precision). Full per-draw results, checkpoint weights and the PNG plot remain on the researcher's own computer; they were **not** uploaded to GitHub.
 
-## Test accuracy of the clean Transformer
+## Commands completed successfully
 
-| Metric | First run |
+```powershell
+py code/generate_perturbation_data.py
+py code/test_perturbation_pipeline.py
+py code/transformer_model.py
+py code/perturbation_experiment.py
+```
+
+Smoke test: `PASS: chronological splits, historical windows, forward/backward pass`.
+
+Training ran 10 epochs, with the **best validation loss at epoch 5**, then stopped because the validation loss did not improve for five consecutive epochs.
+
+[Recorded training losses (CSV)](observed_training_2026-10-20.csv)
+
+| Clean Transformer test metric | Value |
 | --- | ---: |
-| Test MSE (original units) | 1.045586 |
-| Test MAE (original units) | 0.808803 |
-| Best validation MSE (normalized units) | 0.495638 |
+| MSE (original units) | 1.045586 |
+| MAE (original units) | 0.808803 |
+| RMSE (original units; from test MSE) | ~1.022539 |
+| Best validation MSE (normalized units) | ~0.495638 |
 
-These results come from a single fitted Transformer on 750 held-out target time indices.
+The clean test has 750 held-out target indices (4250–4999). The metric values are based on a single trained Transformer.
 
-## Input perturbation response
+## Recorded Gaussian perturbation results
 
-Mean absolute change in prediction, averaged over held-out test windows and 30 perturbation draws per sigma:
+The model weights and original test targets were held constant. At each sigma, 30 independent perturbation draws were applied to normalized historical test windows.
 
-| Gaussian input noise sigma (normalized units) | Mean absolute forecast change |
-| ---: | ---: |
-| 0.00 | 0.000000 |
-| 0.01 | 0.007119 |
-| 0.05 | 0.035094 |
-| 0.10 | 0.070765 |
-| 0.20 | 0.140584 |
+[Recorded perturbation summary (CSV)](observed_perturbation_2026-10-20.csv)
 
-![Initial response curve](perturbation_response.svg)
+| Gaussian perturbation σ | Mean abs. forecast change | Std. across 30 repeats | Mean RMSE against original targets | NMSE / train variance |
+| ---: | ---: | ---: | ---: | ---: |
+| 0.00 | 0.000000 | 0.000000 | 1.022539 | 0.501934 |
+| 0.01 | 0.007119 | 0.000197 | 1.022638 | 0.502031 |
+| 0.05 | 0.035094 | 0.001057 | 1.023279 | 0.502662 |
+| 0.10 | 0.070765 | 0.001836 | 1.027424 | 0.506746 |
+| 0.20 | 0.140584 | 0.003439 | 1.040837 | 0.520081 |
 
-The first curve increases approximately with sigma over these five points. This describes **sensitivity**, not automatic deterioration in forecast accuracy. The perturbation script also computes RMSE and NMSE against unchanged test targets so accuracy can be analyzed independently.
+![Confirmed first response curve](perturbation_response.svg)
 
-## Interpretation and cautions
+**Interpretation:** The mean absolute change in the forecast rises nearly proportionally with sigma over the tested range. The model's held-out RMSE also increases, but by a smaller relative amount. Perturbation response and prediction accuracy are different measurements.
 
-- This data is a stationary Gaussian AR(1) series with no intentionally inserted regime changes.
-- Isotropic independent noise modifies temporal covariance, not merely variance at each time.
-- Fixed perturbation repeats do not capture variability due to retraining the Transformer.
-- A suitable next comparison is the optimal one-step AR(1) linear forecast, against which the Transformer can be evaluated for both forecast accuracy and response structure.
-- Response magnitude depends on the units and scaling; use the same scale for cross-model comparison.
-- Numerical results may vary with PyTorch/hardware versions. The source code, parameters, and seeds are recorded for reproducing the experiment.
+## What was — and was not — established
+
+- **Established:** The generated data, chronological splitting, forward/backward test, training, early stopping, held-out evaluation, and perturbation pipeline executed successfully in VS Code.
+- **Established:** The first trained Transformer has measured forecast sensitivity to Gaussian input noise with varying variance.
+- **Not yet established:** Whether these response curves generalize across model-training seeds, different datasets, or distribution-shift scenarios.
+- **Not yet established:** A winner between linear AR(1) and Transformer **on the researcher's machine**. See the [locally validated comparison](linear_baseline_validation.md) and rerun it on Windows for a directly confirmed result.
+- **Not uploaded:** The researcher's local `transformer.pt`, `config.json`, raw `perturbation_metrics.csv`, and generated PNG. Re-run scripts to recreate those files locally; the Git repository intentionally ignores them.
+
+For methodological background, see [Perturbation Methods](../PERTURBATION_METHODS.md).
