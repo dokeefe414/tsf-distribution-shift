@@ -99,4 +99,10 @@ This provides a transparent analytical prediction to compare against empirical p
 
 Both scripts save per-draw and mean-summary CSVs, along with original-unit RMSE and fixed-training-variance NMSE. The comparison generates a two-panel plot separating output sensitivity from forecast error.
 
-The initial Windows Transformer results are recorded in [initial_results.md](transformer_experiment/initial_results.md). A separately executed local validation of the baseline comparison is documented in [linear_baseline_validation.md](transformer_experiment/linear_baseline_validation.md). The student's own fitted-baseline comparison must be run after pulling the new code to confirm the result for the Windows checkpoint.
+The initial Windows Transformer results are recorded in [initial_results.md](transformer_experiment/initial_results.md). The researcher's Windows baseline comparison also completed successfully; the confirmed results are in [linear_baseline_validation.md](transformer_experiment/linear_baseline_validation.md). The next coordinate-based experiment has been implemented and tested locally, and is described in [DIRECTIONAL_PERTURBATIONS.md](DIRECTIONAL_PERTURBATIONS.md).
+
+## Next implemented experiment: one-coordinate directional perturbations
+
+For each position j = 1,...,32, perturb ONLY that historical input coordinate with Gaussian noise of normalized standard deviation 0.10. Reuse the same perturbed test windows for both the fitted AR(1) and frozen Transformer. Record the change in prediction and accuracy relative to unchanged original targets. The [directional methods document](DIRECTIONAL_PERTURBATIONS.md) spells out the noise protocol, interpretation and expected analytical AR(1) behavior, and how to run the new code.
+
+The coordinate study probes which historical positions influence prediction and separates the results by model. It does **not** yet implement joint covariance perturbations, Riemannian distances, long-horizon rollouts or a surrogate fidelity loss.

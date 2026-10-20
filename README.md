@@ -22,7 +22,9 @@ The current priority is question 2, using a deliberately simple synthetic baseli
 | 1. Simple shifting synthetic data | Abrupt mean/variance changes and nonlinear observation rule | Implemented |
 | 2. More challenging time series | AR dependencies, nonlinear term, changing seasonality, outliers and varying noise | Implemented |
 | 3. Classical methods | Rolling ARIMA, standard KF and adaptive KF comparisons | Implemented; methodology needs further refinement |
-| **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |\n| **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Implemented and validated locally; ready to run in VS Code** |
+| **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |
+| **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Completed successfully in VS Code; metrics recorded** |
+| **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Implemented and tested locally; Windows run next** |
 | 5. Broader analysis | Covariance directions, distribution families, long-horizon forecasts, surrogate fidelity, information geometry | Planned |
 
 ## Run the new Transformer / perturbation experiment
@@ -33,11 +35,15 @@ Open this repository in Visual Studio Code. In a terminal opened at the reposito
     python code/generate_perturbation_data.py
     python code/test_perturbation_pipeline.py
     python code/transformer_model.py
-    python code/perturbation_experiment.py\n    python code/test_linear_baseline.py\n    python code/linear_baseline_comparison.py
+    python code/perturbation_experiment.py
+    python code/test_linear_baseline.py
+    python code/linear_baseline_comparison.py
+    python code/test_directional_perturbation.py
+    python code/directional_perturbation.py
 
 If Windows uses the Python launcher, replace `python` with `py`. Running the scripts from the root is easiest, although the scripts resolve their project paths relative to their own files.
 
-The generator creates the data, and the first smoke test checks split boundaries and the network's forward/backward pass. Training writes a model checkpoint and held-out predictions. The perturbation script generates the initial response plot. The **last two commands** test and compare a training-fitted linear AR(1) predictor against the same frozen Transformer, using the same test targets and paired noise draws.
+The generator creates the data; the first smoke test verifies split boundaries and forward/backward computation. Training saves a checkpoint and held-out predictions. The perturbation script generates the noise-magnitude response plot. Next, the baseline test and comparison evaluate a fitted linear AR(1) on the same held-out examples and paired noise draws as the frozen Transformer. The final two commands test and measure **position-by-position directional response** for all 32 historical observations. Existing local checkpoints are reused; retraining is not needed for directional evaluation.
 
 **No pretrained forecasting model is used.** The Transformer-style block explicitly implements multi-head scaled dot-product attention using query, key and value projections in PyTorch.
 
@@ -56,7 +62,7 @@ The generator creates the data, and the first smoke test checks split boundaries
 | Training | AdamW, MSE, early stopping by validation loss |
 | Perturbation | `epsilon ~ N(0, sigma² I)` added to normalized **test inputs only** |
 | Sigma | `0, 0.01, 0.05, 0.10, 0.20` times the training standard deviation |
-| Repeats | 30 independent perturbation draws for each sigma |
+| Repeats | 30 independent perturbation draws for each sigma in the isotropic sweep; 12 per input position by default in the new directional test |
 | Response | Mean absolute difference between perturbed and clean forecasts |
 | Accuracy | RMSE and NMSE measured against **unchanged original targets** |
 
@@ -77,14 +83,17 @@ The scripts were run successfully in VS Code on Windows. The training smoke test
 
 See [confirmed training and perturbation results](reports/transformer_experiment/initial_results.md), with [epoch-by-epoch training losses](reports/transformer_experiment/observed_training_2026-10-20.csv) and the [recorded 30-repeat summary](reports/transformer_experiment/observed_perturbation_2026-10-20.csv).
 
-The linear AR(1) comparison has also been **run and tested in a separate local validation** (not yet confirmed on your Windows checkout). See [linear-versus-Transformer comparison](reports/transformer_experiment/linear_baseline_validation.md). Run `py code/linear_baseline_comparison.py` locally after `git pull origin main` to reproduce it with your saved model.
+The fitted AR(1) versus Transformer comparison **also completed successfully in the researcher's Windows VS Code terminal**. Its fitted slope was 0.716396, with clean test RMSE **1.004406** (linear) versus **1.022539** (Transformer). At sigma=0.10, mean absolute forecast response was **0.082423** (linear) versus **0.070765** (Transformer). See the [confirmed comparison report](reports/transformer_experiment/linear_baseline_validation.md) and [recorded table](reports/transformer_experiment/observed_linear_comparison_2026-10-20.csv).
 
 ### Understand the method
 
 - [Research proposal (HTML)](reports/perturbation_proposal.html) — objectives, mathematical setup, justified distributions and future research directions.
 - [Perturbation methodology](reports/PERTURBATION_METHODS.md) — data flow, attention mathematics, leakage prevention, loss and evaluation.
 - [Transformer code walkthrough](code/TRANSFORMER_WALKTHROUGH.md) — explanations tied to the source code.
-- [Confirmed Windows run](reports/transformer_experiment/initial_results.md) — actual console results, training losses, sensitivity and forecast error.\n- [Linear baseline validation](reports/transformer_experiment/linear_baseline_validation.md) — compared fitted AR(1) and Transformer using paired perturbations; explains limits.
+- [Confirmed Windows run](reports/transformer_experiment/initial_results.md) — actual console results, training losses, sensitivity and forecast error.
+- [Confirmed AR(1) versus Transformer comparison](reports/transformer_experiment/linear_baseline_validation.md) — Windows results, paired perturbations, theory and interpretation.
+- [Directional perturbation protocol](reports/DIRECTIONAL_PERTURBATIONS.md) — the next implemented experiment; 32 input positions, formulas, output files and limitations.
+- [Research status and advisor roadmap](reports/RESEARCH_STATUS.md) — progress through the September meeting goals.
 - [New generator](code/generate_perturbation_data.py), [model/trainer](code/transformer_model.py), [experiment](code/perturbation_experiment.py).
 
 ### What the first results do *not* demonstrate
@@ -113,7 +122,11 @@ A larger forecast response does **not** automatically imply worse forecasting ac
       generate_perturbation_data.py       # NEW
       transformer_model.py                # NEW
       perturbation_experiment.py          # NEW
-      test_perturbation_pipeline.py       # NEW\n      linear_baseline_comparison.py        # NEW\n      test_linear_baseline.py              # NEW
+      test_perturbation_pipeline.py       # NEW
+      linear_baseline_comparison.py        # NEW
+      test_linear_baseline.py              # NEW
+      directional_perturbation.py          # NEW
+      test_directional_perturbation.py     # NEW
       TRANSFORMER_WALKTHROUGH.md          # NEW
     data/synthetic/                      # baseline datasets and historical metrics
     kalman/                              # earlier KF work
@@ -123,7 +136,13 @@ A larger forecast response does **not** automatically imply worse forecasting ac
       perturbation_proposal.html          # NEW
       PERTURBATION_METHODS.md             # NEW
       transformer_experiment/
-        initial_results.md               # NEW\n        observed_training_2026-10-20.csv  # NEW, printed training losses\n        observed_perturbation_2026-10-20.csv # NEW, printed summaries\n        linear_baseline_validation.md     # NEW
+        initial_results.md               # NEW
+        observed_training_2026-10-20.csv  # NEW, printed training losses
+        observed_perturbation_2026-10-20.csv # NEW, printed summaries
+        linear_baseline_validation.md     # NEW
+        observed_linear_comparison_2026-10-20.csv # NEW
+    DIRECTIONAL_PERTURBATIONS.md           # NEW
+    RESEARCH_STATUS.md                     # NEW
     requirements-perturbation.txt         # NEW
 
 The experiments generate datasets, checkpoint weights, per-draw statistics and PNG plots locally. Those large/reproducible outputs are git-ignored; the repository **does retain** small CSV snapshots transcribed from the confirmed Windows console output, code, and Markdown reports for reproducibility.
@@ -132,4 +151,4 @@ The experiments generate datasets, checkpoint weights, per-draw statistics and P
 
 The generator, training and perturbation stages use fixed random seeds. Results can still vary across PyTorch versions, hardware, and platform configuration. The train/validation/test split uses chronological target indices; the validation/test *windows* may contain observations immediately preceding their split boundary, which is permitted in one-step forecasting when those observations are known at prediction time.
 
-This project is exploratory work in progress. The fitted linear baseline is now implemented as the next check. After reproducing it in VS Code, compare perturbation responses across independent training seeds, different noise directions, and eventually correlated Gaussian inputs and longer-horizon forecasts.
+This project is exploratory work in progress. The linear baseline **was confirmed on Windows**. The coordinate-wise directional experiment is **newly implemented and locally tested**, but has not yet been run in the researcher's VS Code checkout. Next, repeat model training across seeds and investigate norm-matched directions, temporally correlated Gaussian noise, and longer-horizon forecasting.

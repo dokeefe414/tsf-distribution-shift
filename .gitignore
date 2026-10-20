@@ -18,3 +18,7 @@ reports/transformer_experiment/perturbation_summary.csv
 # Locally generated fitted-AR(1) comparison artifacts
 reports/transformer_experiment/linear_vs_transformer_*.csv
 reports/transformer_experiment/linear_baseline_parameters.json
+
+# Coordinate-wise input sensitivity experiments (regenerable)
+reports/transformer_experiment/directional_*.csv
+reports/transformer_experiment/directional_sensitivity.png

@@ -50,7 +50,7 @@ The model weights and original test targets were held constant. At each sigma, 3
 - **Established:** The generated data, chronological splitting, forward/backward test, training, early stopping, held-out evaluation, and perturbation pipeline executed successfully in VS Code.
 - **Established:** The first trained Transformer has measured forecast sensitivity to Gaussian input noise with varying variance.
 - **Not yet established:** Whether these response curves generalize across model-training seeds, different datasets, or distribution-shift scenarios.
-- **Not yet established:** A winner between linear AR(1) and Transformer **on the researcher's machine**. See the [locally validated comparison](linear_baseline_validation.md) and rerun it on Windows for a directly confirmed result.
+- **Now established for this single dataset/seed:** the fitted AR(1) and frozen Transformer comparison also ran successfully in the researcher's Windows terminal. See the [confirmed AR(1) comparison](linear_baseline_validation.md) for its results; no general cross-dataset ranking follows.
 - **Not uploaded:** The researcher's local `transformer.pt`, `config.json`, raw `perturbation_metrics.csv`, and generated PNG. Re-run scripts to recreate those files locally; the Git repository intentionally ignores them.
 
-For methodological background, see [Perturbation Methods](../PERTURBATION_METHODS.md).
+For methodological background, see [Perturbation Methods](../PERTURBATION_METHODS.md). The next directional study is documented in [Directional Perturbations](../DIRECTIONAL_PERTURBATIONS.md).

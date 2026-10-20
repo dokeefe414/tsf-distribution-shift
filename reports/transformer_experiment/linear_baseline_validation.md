@@ -1,23 +1,33 @@
-# Fitted AR(1) versus Transformer — local validation
+# Fitted AR(1) versus Transformer: confirmed Windows comparison
 
-## Why this benchmark?
+**Date:** October 20, 2026  
+**Source:** researcher-provided VS Code PowerShell output after running the GitHub scripts (the summary values below were transcribed from the displayed output and rounded to six decimals). The raw per-repeat CSV and checkpoint remain on the local computer.
 
-The generator is **Gaussian AR(1)**: `x[t] = 0.7 * x[t-1] + eta[t]`, where eta[t] is independent Gaussian noise with standard deviation 1. For this process, the correct conditional-mean one-step forecast depends only on the most recent observation. A simple fitted AR(1) therefore provides a scientifically informative baseline.
+## What was run
 
-We fit `normalized_x[t] = a + b * normalized_x[t-1]` by least squares on **training target indices only**. We do *not* supply the known coefficient 0.7 to the fit. Predictions are transformed back into original units. The evaluation uses the exact same test indices, fixed Transformer weights, same original targets and **paired Gaussian input perturbations** for both models.
+After a successful git pull, these commands completed:
 
-## Results from a separate local validation
+    py code/test_linear_baseline.py
+    py code/linear_baseline_comparison.py
 
-The comparison script was tested using the locally retained research starter's generated series and model checkpoint (same seed and core model configuration as the project). This is **not yet a comparison run confirmed on the student's Windows machine**; rerun it locally after pulling the updated GitHub repository.
+The test printed: **PASS: AR(1) fitting, directional response, and metrics**. The fitted AR(1) slope was **0.716396**, with a normalized intercept of approximately **-0.000109**. The generator coefficient is 0.7.
 
-| Clean test metric | Fitted AR(1) | Transformer |
+## Why this is a fair baseline
+
+For the Gaussian AR(1) generator (x[t] = 0.7*x[t-1] + independent N(0,1) noise), the theoretically appropriate one-step conditional mean depends on the most recent observation. The linear predictor is fitted by ordinary least squares using **training target indices only**; the true coefficient is not supplied to the fit. Transformer predictions and linear predictions are evaluated on identical held-out test target times, with the same normalized input windows, original targets, and paired Gaussian noise draws. The trained Transformer remains unchanged throughout.
+
+### Clean test accuracy
+
+| Model | RMSE | MAE |
 | --- | ---: | ---: |
-| RMSE | 1.004406 | 1.022539 |
-| MAE | 0.790132 | 0.808803 |
+| Fitted linear AR(1) | 1.004406 | 0.790132 |
+| Transformer | 1.022539 | 0.808803 |
 
-Estimated normalized AR(1) slope: **0.716396**, close to the generator's value of 0.7.
+This fitted linear AR(1) has lower test error on this one dataset and seed. That is consistent with the known linear data-generating process; it does **not** establish that linear models are generally better than Transformers.
 
-| Perturbation σ (normalized) | Fitted AR(1) mean absolute response | Transformer mean absolute response | Fitted AR(1) mean RMSE | Transformer mean RMSE |
+### Paired Gaussian input perturbations (30 draws at each sigma)
+
+| Noise sigma / train std | Linear mean abs response | Transformer mean abs response | Linear RMSE | Transformer RMSE |
 | ---: | ---: | ---: | ---: | ---: |
 | 0.00 | 0.000000 | 0.000000 | 1.004406 | 1.022539 |
 | 0.01 | 0.008284 | 0.007119 | 1.004521 | 1.022638 |
@@ -25,33 +35,28 @@ Estimated normalized AR(1) slope: **0.716396**, close to the generator's value o
 | 0.10 | 0.082423 | 0.070765 | 1.010917 | 1.027424 |
 | 0.20 | 0.164668 | 0.140584 | 1.027068 | 1.040837 |
 
-In this one local comparison, the fitted linear model has **lower clean test error** and **larger average input-perturbation response** than the Transformer. A larger response means a larger change in the forecast, not necessarily a worse predictor. The simple fitted AR(1) reflects the known data-generating structure.
+[Recorded full summary table (CSV)](observed_linear_comparison_2026-10-20.csv)
 
-For the fitted AR(1), the theoretical expected absolute forecast change under independent Gaussian perturbation is:
+For Gaussian independent input noise, the fitted AR(1) has an analytical expected response magnitude:
 
-`E|Δ forecast| = |b| * σ * training_std * sqrt(2/pi)`.
+**E|change| = |fitted slope| × sigma × training std × sqrt(2/pi).**
 
-Only the perturbation of the most recent input coordinate affects this AR(1) forecast; the earlier 31 coordinates contribute nothing. The Transformer can use all 32 coordinates.
+In the console output, the theoretical values at sigma = 0.01, 0.05, 0.10, 0.20 were approximately 0.008250, 0.041250, 0.082499, 0.164998; they closely match the empirical means. The comparison therefore also checks that the experiment behaves as expected for a simple known model.
 
-## Reproduce this comparison on your Windows checkout
+## Interpretation and limitations
 
-After the existing generator, Transformer training, and perturbation scripts have finished:
+1. The Transformer is **less sensitive to this isotropic Gaussian perturbation** at every tested nonzero sigma, but its original-target RMSE is **higher**. Sensitivity and accuracy are distinct.
+2. Responses are averages of absolute changes in each model's own forecast, not differences between the two models' forecasts.
+3. Both models receive exactly the same noise realizations within the comparison. Results from the separately run perturbation script are consistent but are not a substitute for matched noise when making a paired comparison.
+4. Only one trained Transformer seed and one Gaussian AR(1) series are included. A difference in response does not demonstrate broad robustness under distribution shifts.
+5. Training-only normalization and fixed original targets prevent data leakage and changes of target definition during the test.
 
-```powershell
-git pull origin main
-py code/test_linear_baseline.py
-py code/linear_baseline_comparison.py
-```
+The checkpoint, generated PNG, and per-repeat outputs are excluded from Git. The recorded table and methodology are committed. For the next experiment, test each of the 32 historical positions separately with [directional_perturbation.py](../../code/directional_perturbation.py); this is an additional *directional sensitivity* test, not a result already confirmed from Windows.
 
-The comparison writes:
-- `linear_vs_transformer_clean_metrics.csv`
-- `linear_vs_transformer_per_draw.csv`
-- `linear_vs_transformer_summary.csv`
-- `linear_baseline_parameters.json`
-- `linear_vs_transformer.png`
+## Reproduce on the same machine
 
-All appear under `reports/transformer_experiment/`. These **machine-generated** outputs are intentionally ignored by Git; this Markdown page preserves the local validation summary, and your observed Windows Transformer results are preserved separately in [initial_results.md](initial_results.md).
+    git pull origin main
+    py code/test_linear_baseline.py
+    py code/linear_baseline_comparison.py
 
-## Limitations and next steps
-
-Results are from one seed and one dataset. The linear generator makes the fitted AR(1) unusually appropriate; do not extrapolate a general ranking of Transformer and classical methods from this test. Next experiments should repeat training seeds, change distribution families, test perturbations along individual time coordinates, and examine correlated Gaussian directions.
+Generated files live under **reports/transformer_experiment/**: linear_vs_transformer_clean_metrics.csv, linear_vs_transformer_per_draw.csv, linear_vs_transformer_summary.csv, linear_baseline_parameters.json, and linear_vs_transformer.png.

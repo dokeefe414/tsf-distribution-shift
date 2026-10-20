@@ -74,4 +74,4 @@ The model uses full-window attention rather than autoregressive generation of mu
 
 The first dataset is a linear Gaussian AR(1) process, so a simple AR(1) regression is an important comparison baseline. The Transformer may have similar or worse forecasting error even if its perturbation-response pattern is interesting.
 
-Next: run multiple training seeds; compare to a linear baseline; measure per-time-position sensitivity; use directional and correlated perturbations; investigate multi-step forecasts.
+The fitted linear AR(1) comparison is now implemented and was run on Windows. See [confirmed comparison](../reports/transformer_experiment/linear_baseline_validation.md). The newest script [directional_perturbation.py](directional_perturbation.py) probes each of the 32 input positions, keeping model weights and original targets fixed. See [the protocol](../reports/DIRECTIONAL_PERTURBATIONS.md). Future work: multiple training seeds, correlated perturbations, different time scales, and multi-step rollouts.
