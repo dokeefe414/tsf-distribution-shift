@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Proposal | Time-Series Perturbation Response</title>
+<style>
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#192a40;background:#f4f7fb}
+body{margin:0} main{max-width:930px;margin:32px auto;padding:38px;background:white;border:1px solid #dce4ee;border-radius:14px;line-height:1.6;box-shadow:0 5px 28px #2030400b}
+h1{margin:0;color:#123864;font-size:2rem;line-height:1.2} h2{color:#184a7e;margin-top:32px;border-bottom:1px solid #dce4ee;padding-bottom:7px}
+.eyebrow{font-size:.85rem;letter-spacing:.09em;text-transform:uppercase;color:#537397;font-weight:700}
+.sub{color:#55677c}.pill{display:inline-block;background:#e7f0ff;border-radius:12px;padding:2px 10px;color:#1b5094;font-size:.85rem}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{border-bottom:1px solid #e5ecf3;text-align:left;padding:9px;vertical-align:top}th{background:#f0f5fc;color:#173c64}
+code,.equation{font-family:Consolas,monospace;background:#f3f6fb;padding:2px 5px;border-radius:5px}.equation{display:block;padding:14px;margin:12px 0;overflow:auto}
+small{color:#58677c}ul{padding-left:24px}
+@media(max-width:650px){main{margin:0;padding:20px;border:0;border-radius:0}}
+@media print{body{background:white}main{margin:0;box-shadow:none;border:0;padding:0}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">Research plan • October 2026</div>
+<h1>Perturbation Response of Time-Series Forecasters</h1>
+<p class="sub">A controlled experimental study of input sensitivity, forecasting accuracy, and extensions toward information geometry.</p>
+<p><span class="pill">Concrete first experiment</span> <strong>Researcher:</strong> Daniel O'Keefe</p>
+
+<h2>1. Motivation and research question</h2>
+<p>Previous experiments compared ARIMA and Kalman forecasting methods on synthetic series with changing regimes. Those results are useful but do not isolate which particular change caused a forecast response. The next stage studies controlled modifications to the historical input of a fixed forecasting model.</p>
+<p><strong>Core question:</strong> How does a trained one-step Transformer-style forecaster respond to small Gaussian perturbations of its historical observations? How does the response vary with perturbation variance, and is sensitivity associated with reduced forecasting accuracy?</p>
+
+<h2>2. Mathematical problem formulation</h2>
+<p>Let a generator G produce a discrete real-valued time series x[t]. Given the previous L observations X[t]=(x[t-L], ..., x[t-1]), a trained forecaster Fθ returns a one-step estimate of x[t].</p>
+<div class="equation">clean prediction = Fθ(X[t])</div>
+<p>Introduce random input perturbations ε drawn from a controlled distribution Pσ. In the first experiment, they are zero-mean, independent Gaussian variables:</p>
+<div class="equation">ε ~ N(0, σ² I[L]); X'[t] = X[t] + ε</div>
+<div class="equation">response Δ[t,ε] = Fθ(X'[t]) - Fθ(X[t])</div>
+<p>Measure the mean absolute response over test samples and repeated noise draws. Evaluate forecast RMSE against original unperturbed targets separately. Keep θ fixed during the perturbation experiment.</p>
+
+<h2>3. Generator G: proposed distribution collection</h2>
+<p>Choose the simplest distribution that can expose a specific behavior, then increase complexity only after a control experiment works.</p>
+<table><thead><tr><th>Distribution</th><th>Justification</th><th>Order</th></tr></thead><tbody>
+<tr><td>Stationary Gaussian AR(1)</td><td>Known conditional mean, controlled covariance, analytically interpretable linear baseline</td><td>First</td></tr>
+<tr><td>Gaussian with mean/variance change</td><td>Separates level shifts from volatility shifts using controlled interventions</td><td>Next</td></tr>
+<tr><td>Correlated multivariate Gaussian</td><td>Allows directional perturbations and covariance eigenvector experiments</td><td>Next</td></tr>
+<tr><td>Laplace</td><td>Heavier tails probe reactions to occasional larger changes</td><td>Later</td></tr>
+<tr><td>Uniform</td><td>Bounded-control comparison, though sharp density boundaries complicate directional-score analysis</td><td>Later</td></tr>
+<tr><td>Gaussian mixture</td><td>Introduces multimodality and distinct density regions</td><td>Later</td></tr>
+</tbody></table>
+
+<h2>4. Concrete first experiment</h2>
+<table><tbody>
+<tr><th>Generator</th><td>x[t] = 0.7 x[t-1] + η[t], η[t] ~ N(0,1)</td></tr>
+<tr><th>Length</th><td>5,000 samples after a 200-step burn-in</td></tr>
+<tr><th>Train/validation/test</th><td>70/15/15 chronological split by target index</td></tr>
+<tr><th>Model F</th><td>Custom PyTorch one-block Transformer-style encoder; attention projections coded explicitly</td></tr>
+<tr><th>Window, horizon</th><td>L=32, one-step forecast</td></tr>
+<tr><th>Training</th><td>Normalize from training set, optimize MSE with AdamW, use validation-based early stopping</td></tr>
+<tr><th>Noise</th><td>σ = 0, 0.01, 0.05, 0.10, 0.20 measured in training standard deviation units</td></tr>
+<tr><th>Replicates</th><td>30 independent noise draws per σ for one initially trained model</td></tr>
+<tr><th>Response metric</th><td>Mean absolute prediction change |F(X+ε)-F(X)|</td></tr>
+<tr><th>Accuracy metrics</th><td>Held-out RMSE and normalized MSE against unchanged targets</td></tr>
+</tbody></table>
+
+<h2>5. Perturbation fidelity and response directions</h2>
+<p>Small perturbation variance controls the per-coordinate change but does not automatically preserve the joint temporal distribution. With L dimensions and isotropic normalized Gaussian noise, E||ε||² = Lσ². In the next stage, compare directions by perturbing along individual input coordinates, shared all-one directions, and covariance eigenvectors. Track changes in input covariance and measure response anisotropy.</p>
+<p>A directional score (gradient of log probability density) is available analytically for a Gaussian distribution with invertible covariance. This can motivate density-aligned perturbation directions later; it is not part of the initial results.</p>
+
+<h2>6. Training choices and objectives</h2>
+<p>Investigate how window length L, training random seed, regularization and model size affect sensitivity. Begin with pointwise MSE and AdamW. Future objectives may include distributional losses for ensembles and time-alignment losses for longer-horizon prediction; such objectives require careful definition and are not implemented initially.</p>
+
+<h2>7. Longer-horizon and information-geometric extensions</h2>
+<p>After one-step experiments are validated, use autoregressive rollouts to study propagation of small input changes through many steps. For statistical-manifold studies, use parameterized distribution families (e.g. Gaussian mean and covariance paths) and potentially Fisher-information-based local distances. The current study does not compute geodesics or Riemannian geometry.</p>
+
+<h2>8. Interpretable surrogate and fidelity</h2>
+<p>A future surrogate S can approximate the Transformer F. Assess both <strong>output fidelity</strong> |S(X)-F(X)| and <strong>response fidelity</strong> |(S(X+ε)-S(X))-(F(X+ε)-F(X))|. They need not coincide. The meaning of the advisor's abbreviated “mutual D2” objective should be clarified before formalizing a joint optimization loss.</p>
+
+<h2>9. Validity, limitations and deliverables</h2>
+<ul>
+<li>Compare the Transformer to a linear AR(1) benchmark appropriate for the generator.</li>
+<li>Keep training/validation/test targets disjoint; fit scaling using training observations only.</li>
+<li>Retrain using several seeds and quantify both training variation and perturbation variation.</li>
+<li>Distinguish output sensitivity, true forecast deterioration, and a shift in the underlying generator.</li>
+<li>Document scripts, configuration, CSV metrics, plots and any failure modes.</li>
+</ul>
+<p><strong>Deliverables:</strong> HTML proposal, AR(1) data generator, custom documented Transformer, perturbation evaluation script, plots and tables, initial interpretation, and future correlated perturbation and long-horizon extensions.</p>
+<p><small>This is a working research proposal, not a claim that every proposed extension has already been completed.</small></p>
+</main></body></html>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="420" viewBox="0 0 780 420">
+  <rect width="780" height="420" fill="#ffffff"/>
+  <text x="390" y="36" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="19" fill="#243047">Initial Gaussian perturbation response</text>
+  <text x="390" y="60" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#566578">One trained model, 30 draws per sigma; first local run</text>
+  <line x1="95" y1="345" x2="700" y2="345" stroke="#344054" stroke-width="2"/>
+  <line x1="95" y1="345" x2="95" y2="90" stroke="#344054" stroke-width="2"/>
+  <g font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#475467">
+    <text x="84" y="349" text-anchor="end">0.00</text>
+    <text x="84" y="286" text-anchor="end">0.04</text>
+    <text x="84" y="223" text-anchor="end">0.08</text>
+    <text x="84" y="160" text-anchor="end">0.12</text>
+    <text x="84" y="97" text-anchor="end">0.16</text>
+    <text x="95" y="368" text-anchor="middle">0.00</text>
+    <text x="246" y="368" text-anchor="middle">0.05</text>
+    <text x="397" y="368" text-anchor="middle">0.10</text>
+    <text x="700" y="368" text-anchor="middle">0.20</text>
+    <text x="395" y="403" text-anchor="middle">Perturbation std (normalized units)</text>
+  </g>
+  <g stroke="#e4e7ec" stroke-width="1">
+    <line x1="95" y1="282" x2="700" y2="282"/>
+    <line x1="95" y1="219" x2="700" y2="219"/>
+    <line x1="95" y1="156" x2="700" y2="156"/>
+    <line x1="95" y1="93" x2="700" y2="93"/>
+  </g>
+  <text x="23" y="222" transform="rotate(-90 23 222)" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#344054">Mean absolute forecast change</text>
+  <path d="M 95 345 L 125 333.79 L 246 289.72 L 397 233.54 L 700 123.58" fill="none" stroke="#2563eb" stroke-width="3"/>
+  <g fill="#2563eb" stroke="#fff" stroke-width="2">
+    <circle cx="95" cy="345" r="5"/>
+    <circle cx="125" cy="333.79" r="5"/>
+    <circle cx="246" cy="289.72" r="5"/>
+    <circle cx="397" cy="233.54" r="5"/>
+    <circle cx="700" cy="123.58" r="5"/>
+  </g>
+</svg>

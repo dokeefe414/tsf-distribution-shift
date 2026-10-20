@@ -1,0 +1,86 @@
+# Perturbation-response research: methodology and evaluation
+
+## Goal and relationship to earlier work
+
+Earlier experiments changed the time-series-generating process across regimes and evaluated the resulting forecasting error. The new experiment instead holds a generator and a **trained forecaster** fixed, then perturbs its **input window**. The goal is to measure the resulting output sensitivity and accuracy change separately.
+
+The simpler baseline matters: simultaneously varying trend, variance, seasonality, model dynamics and outliers would make it hard to identify what produced a response.
+
+## Generator G
+
+First experiment: a stationary autoregressive Gaussian process.
+
+`x_t = 0.7 x_(t-1) + eta_t`, with `eta_t ~ N(0,1)` independent across t.
+
+A fixed seed generates 5,200 observations; the first 200 are discarded as burn-in. Remaining samples are cast to float32. There are no designed distribution shifts in this first experiment.
+
+## Forecaster F
+
+The trained model maps `X_t = (x_(t-L), ..., x_(t-1))` to a one-step prediction of `x_t`, with `L=32`. It is an explicitly coded, small Transformer-style encoder.
+
+Use chronological splits on *target indices*: training 32–3499, validation 3500–4249, test 4250–4999. The training segment determines normalization statistics. Validation determines the selected checkpoint. The test targets are held out until final evaluation.
+
+## Perturbation P
+
+For a normalized historical input window of length L:
+
+`epsilon ~ N(0, sigma_p^2 I_L)` and `X'_t = X_t + epsilon`.
+
+Because the inputs are normalized by the training standard deviation, sigma is expressed in training-standard-deviation units. The values 0.01, 0.05, 0.10 and 0.20 represent increasingly strong, but still controlled, perturbations. Sigma=0 is the exact no-perturbation control.
+
+30 independently generated draws are used for each sigma. All comparisons reuse the same trained weights. The unperturbed target `x_t` is **not** modified.
+
+## Response and accuracy are distinct
+
+Clean forecast: `f_t = F(X_t)`.
+
+Perturbed forecast: `f'_t = F(X_t + epsilon)`.
+
+Response: `delta_t = f'_t - f_t`.
+
+Primary measure: average absolute response, `mean_t |delta_t|`, further averaged over perturbation repeats.
+
+Accuracy is evaluated separately against **original** targets, using RMSE and NMSE. NMSE divides MSE by the *training-set variance*, keeping the denominator fixed across perturbation strengths and avoiding misleading changes due to separate window variances.
+
+A large response is sensitivity; it is not by itself proof that the prediction becomes less accurate. Some perturbations can accidentally improve predictions.
+
+## Interpreting perturbation size and sample fidelity
+
+A small sigma means each coordinate of the normalized input moves only a fraction of its training standard deviation. For L dimensions, the expected squared Euclidean size under isotropic Gaussian perturbations is `L*sigma_p^2` (in normalized coordinates), so `sqrt(L)*sigma_p` is the root-mean-squared vector norm.
+
+This controls *per-coordinate* scale, but does not guarantee the perturbed windows follow the original AR(1) distribution: independent added noise changes temporal covariance. In future experiments, distribution fidelity can be assessed using covariance diagnostics or divergences between original and perturbed distributions.
+
+## Distribution choices for follow-up experiments
+
+| Choice | Why consider it | What it changes |
+| --- | --- | --- |
+| Isotropic Gaussian (current) | Analytically transparent, repeatable, controlled variance | Noise magnitude without a preferred direction |
+| Correlated multivariate Gaussian | Test sensitivity to temporal correlation and covariance directions | Covariance eigenvalues and eigenvectors |
+| Laplace | Heavier tails reveal sensitivity to occasional larger deviations | Tail behavior |
+| Uniform | Bounded noise provides a control without large deviations | Support shape |
+| Gaussian mixtures | Study multimodality and different local density regions | Number/position/weight of modes |
+
+Start with isotropic Gaussian variance sweeps. Then choose a fixed direction or covariance eigenvector and apply a scaled perturbation along it, changing one factor at a time. Do not label input noise as a distribution shift in the underlying generator.
+
+## Model training as an experimental variable
+
+Hold architecture and dataset fixed while varying one training feature, e.g. window length, weight decay, random seed or loss. Compare the **response curve** and **unperturbed test accuracy**; improvements in one do not guarantee improvements in the other.
+
+## Long-horizon extension
+
+For one-step autoregressive rollouts, future predictions can be fed back into future inputs. Compare response magnitude as rollout length increases, and measure accumulated prediction drift. This is not yet implemented and should not be inferred from the one-step figures.
+
+## Statistical manifolds and surrogate models: future direction
+
+The Gaussian family can be parameterized by mean and covariance. One can later define paths through this parameter space, perturb data drawn from those distributions, and compare forecaster response. A Fisher-information metric is a possible way to formalize local distribution distance, but it is **not** calculated by the current experiment.
+
+A future interpretable surrogate `S` could be trained to approximate Transformer `F`. Two different fidelity questions then matter: output fidelity `|S(X)-F(X)|` and response fidelity `|(S(X+epsilon)-S(X))-(F(X+epsilon)-F(X))|`. These should be studied separately; the advisor's abbreviated "mutual D2" description should be clarified before a formal loss is selected.
+
+## Validity checks and reporting
+
+1. Verify forward/backward propagation and split boundaries using the smoke test.
+2. Report both mean sensitivity and forecast accuracy at each perturbation strength.
+3. Compare multiple independently trained model seeds in future work; 30 noise draws for one trained model do **not** provide uncertainty across training seeds.
+4. Include a linear AR(1) baseline, which is appropriate for the selected generator.
+5. Use matched clean and perturbed test inputs, a fixed pretrained checkpoint, and common evaluation targets.
+6. Be explicit that the current experiments are exploratory and do not prove robustness under regime shifts.

@@ -1,0 +1,6 @@
+# Install from the repository root:
+# python -m pip install -r requirements-perturbation.txt
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+torch>=2.2
