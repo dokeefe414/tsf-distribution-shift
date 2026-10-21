@@ -25,7 +25,7 @@ The current priority is question 2, using a deliberately simple synthetic baseli
 | **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |
 | **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Completed successfully in VS Code; metrics recorded** |
 | **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Completed in VS Code; original plot uploaded to GitHub** |
-| **4d. Correlated Gaussian perturbations** | **Change input covariance without changing marginal noise variance** | **Implemented and locally tested; Windows run next** |
+| **4d. Correlated Gaussian perturbations** | **Change input covariance without changing marginal noise variance** | **Completed in Windows VS Code; original graphs uploaded** |
 | 5. Broader analysis | Covariance directions, distribution families, long-horizon forecasts, surrogate fidelity, information geometry | Planned |
 
 ## Run the new Transformer / perturbation experiment
@@ -90,7 +90,7 @@ The fitted AR(1) versus Transformer comparison **also completed successfully in 
 
 **Directional sensitivity was also run successfully on Windows.** The fitted AR(1) responds only to the most recent input (position 32), while the Transformer shows smaller nonzero responses to earlier positions. The [original directional PNG](reports/figures/directional_sensitivity.png) was subsequently uploaded directly to GitHub. The exact numeric directional CSVs have **not** been published. [Read the directional findings](reports/transformer_experiment/directional_findings_2026-10-20.md).
 
-**Next research experiment:** multivariate Gaussian input perturbations with four covariance structures but the same marginal noise variance. The new code and tests have been **verified in a separate local development environment**; this experiment has **not yet been executed on your Windows checkpoint**. See [correlated Gaussian methodology](reports/CORRELATED_GAUSSIAN.md).
+**Correlated Gaussian experiment completed on Windows:** 20 noise repetitions per covariance pattern at normalized sigma 0.10. The fitted AR(1) response stayed near its theoretical 0.082499; Transformer response stayed near 0.070 with small covariance-related differences. View the [covariance matrices](reports/figures/correlated_gaussian_matrices.png), [forecast response](reports/figures/correlated_gaussian_response.png), and [paired effects](reports/figures/correlated_gaussian_paired_effects.png). See the [confirmed results report](reports/CORRELATED_GAUSSIAN.md).
 
 ### Understand the method
 
@@ -170,4 +170,8 @@ The experiments generate datasets, checkpoint weights, per-draw statistics and P
 
 The generator, training and perturbation stages use fixed random seeds. Results can still vary across PyTorch versions, hardware, and platform configuration. The train/validation/test split uses chronological target indices; the validation/test *windows* may contain observations immediately preceding their split boundary, which is permitted in one-step forecasting when those observations are known at prediction time.
 
-This project is exploratory work in progress. The linear and coordinate-wise comparisons ran on Windows; the directional image is uploaded. The new covariance experiment was tested in a separate local environment but still needs a run in VS Code using your existing trained model. After that, compare multiple training seeds, analyze norm-matched directions, and investigate longer-horizon forecasting.
+This project is exploratory work in progress. Linear, directional and covariance perturbation experiments have been completed in Windows VS Code and selected plots uploaded. Next steps include multiple independent training seeds, controlled longer-memory data generators and long-horizon forecasting.
+
+## Latest research audit
+
+See [FINAL_REVIEW.md](reports/FINAL_REVIEW.md) for legacy-script fixes, the corrected interpretation of posterior Kalman estimates versus true forecasts, plotting updates and remaining scientific limitations.

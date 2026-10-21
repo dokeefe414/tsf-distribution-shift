@@ -108,7 +108,7 @@ For each position j = 1,...,32, perturb ONLY that historical input coordinate wi
 The coordinate study probes which historical positions influence prediction and separates the results by model. It does **not** yet implement joint covariance perturbations, Riemannian distances, long-horizon rollouts or a surrogate fidelity loss.
 
 
-## Correlated multivariate Gaussian experiment (implemented, Windows run pending)
+## Correlated multivariate Gaussian experiment (completed in Windows VS Code)
 
 The new [covariance study](CORRELATED_GAUSSIAN.md) introduces epsilon ~ N(0, sigma² C), with C chosen from four symmetric positive-definite 32x32 correlation patterns. Every C has diagonal 1, so each coordinate has noise variance sigma² and the expected squared perturbation norm equals 32*sigma². The only deliberate change is in off-diagonal temporal covariance.
 
@@ -116,4 +116,4 @@ We use one independent Gaussian draw z per test window and repetition, then tran
 
 We record the mean absolute forecast change and original-target RMSE separately; per-repeat paired differences relative to independent noise make small covariance effects easier to assess. The expected AR(1) response is theoretically invariant under these covariance conditions, since AR(1) depends only on the newest input and all profiles give that coordinate the same marginal variance.
 
-The mathematical construction and code passed a separate local test, but the researcher's Windows checkpoint has **not yet been evaluated with this experiment**. The run should be interpreted as controlled input-noise sensitivity, not proof of robustness to a changed generating distribution or a calculated statistical-manifold distance.
+The researcher completed the experiment in Windows VS Code and uploaded the figures; see [confirmed covariance results](CORRELATED_GAUSSIAN.md). The run should be interpreted as controlled input-noise sensitivity, not proof of robustness to a changed generating distribution or a calculated statistical-manifold distance.

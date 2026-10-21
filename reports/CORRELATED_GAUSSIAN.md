@@ -1,6 +1,6 @@
 # Correlated multivariate Gaussian perturbation experiment
 
-**Research status:** Implemented and tested in the development environment on October 20, 2026. The researcher has **not yet run the new covariance experiment in VS Code**. The local results below are validation of the implementation using the retained starter dataset and trained model; they are not a new independent research replication.
+**Research status:** Completed by the researcher in Windows VS Code, with 20 of 20 perturbation repetitions. The three original figures are uploaded. Earlier development-environment tests were implementation checks, not independent model-training replications.
 
 ## 1. Motivation
 
@@ -154,7 +154,7 @@ All appear under \`reports/transformer_experiment/\` on your computer (ignored b
 | correlated_gaussian_covariances.csv | All entries of all four designed C matrices |
 | correlated_gaussian_config.json | Experimental parameters, seeds, clean RMSE, learned AR(1) slope |
 
-The source code and protocol are already version-controlled; if you wish to share an actual plot with your advisor, you can upload the original PNG to \`reports/figures/\`, as you did for your directional image.
+Original figures: [covariance matrices](figures/correlated_gaussian_matrices.png), [response and RMSE](figures/correlated_gaussian_response.png), [paired effects](figures/correlated_gaussian_paired_effects.png). Exact raw measurements remain in local CSVs.
 
 ## 7. Limitations and next research direction
 
@@ -165,3 +165,19 @@ The source code and protocol are already version-controlled; if you wish to shar
 - Future: repeat experiments over model-training seeds; vary sigma with the same covariance families; test covariance directions derived from the original data distribution; consider norm-matched eigenvector perturbations and only then formal statistical-manifold questions.
 
 [Experiment source](../code/correlated_gaussian_experiment.py) · [Deterministic test](../code/test_correlated_gaussian.py) · [Code walkthrough](../code/CORRELATED_GAUSSIAN_WALKTHROUGH.md)
+
+
+## Confirmed Windows results (sigma=0.10; 20 repetitions)
+
+The fitted AR(1) theoretical expected mean absolute response is **0.082499** under all four covariance profiles. The following values were read from the researcher's Windows terminal output:
+
+| Correlation profile | Fitted AR(1) mean abs response | Transformer mean abs response |
+| --- | ---: | ---: |
+| Independent | 0.082047 | 0.070116 |
+| Positive temporal | 0.081871 | 0.069930 |
+| Negative temporal | 0.083333 | 0.070397 |
+| Common-mode | 0.081933 | 0.069768 |
+
+Changing covariance with fixed marginal noise variance produced relatively small response changes for both models on this stationary Gaussian AR(1) dataset. The linear model's response stayed close to mathematical theory. The Transformer was less responsive, but this alone does **not** mean it was more accurate. Error bars in the paired effects graph reflect the variability between repeated perturbation draws for a *single trained model*; they do not measure uncertainty across independently trained models.
+
+The original uploaded covariance heatmap has an overlapping colorbar. The updated plotting script fixes the layout for future regenerated figures; the original upload has been preserved rather than silently replaced.

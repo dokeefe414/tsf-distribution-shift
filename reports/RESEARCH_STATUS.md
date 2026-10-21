@@ -26,7 +26,7 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 
 **Completed Windows directional study:** The researcher ran the 32-position experiment; AR(1) responded only at position 32, and the Transformer showed its strongest response there with smaller responses at earlier positions. The [native graph](figures/directional_sensitivity.png) is now uploaded to GitHub. Exact per-position CSVs still reside on the local Windows machine; the plot alone does not establish every numerical value.
 
-**New implementation:** [correlated multivariate Gaussian perturbations](CORRELATED_GAUSSIAN.md), comparing independent, positive temporal, negative temporal, and common-mode covariance with equal marginal variance. Code and mathematical tests passed in a separate development environment; results using the researcher's own Windows checkpoint have **not yet been collected**.
+**Completed Windows covariance study:** All 20 repetitions ran at normalized sigma 0.10. AR(1) mean absolute response stayed near theoretical 0.082499 and Transformer response near 0.070 across the four covariance patterns. Three uploaded figures are in [reports/figures](figures/), with [documented results](CORRELATED_GAUSSIAN.md).
 
 ## Connecting the September advisor notes to completed work
 
@@ -35,7 +35,7 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 | Generator G, distribution choices | Gaussian AR(1), earlier shifted and complex synthetic datasets | Introduce one distribution change at a time |
 | Forecaster F | Custom, from-scratch attention encoder predicting one future scalar | Repeat training seeds; compare architectures/lengths |
 | Training/validation/testing, L, objective, optimizer | Chronological 70/15/15, L=32, normalized MSE, AdamW/early stopping | Vary L or regularization *one factor at a time* |
-| Input perturbation distribution | Magnitude sweep and coordinate-wise Gaussian study completed; covariance comparison coded | Run four-covariance experiment in VS Code and interpret paired effects |
+| Input perturbation distribution | Magnitude sweep, 32-position study, four-covariance Gaussian experiment completed | Repeat across training seeds, then test longer-memory generators |
 | Measure one-step response | Forecast response, RMSE/NMSE, 32-position graph; paired covariance metrics now coded | Assess how covariance shapes affect prediction without changing noise energy |
 | Interpretable comparator | Fitted linear AR(1) with theoretical response formula | Use it as validation when varying perturbation direction |
 | Long horizon and time scales | Not yet studied | Add rollouts and multiple lag scales later |
@@ -44,11 +44,10 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 
 ## Immediate next deliverable
 
-1. Pull the new code into VS Code, keeping the existing trained checkpoint and synthetic data.
-2. Run **`py code/test_correlated_gaussian.py`** to verify Gaussian covariance construction and theoretical controls.
-3. Run **`py code/correlated_gaussian_experiment.py`** with the default sigma=0.10 and 20 noise draws.
-4. Inspect `correlated_gaussian_matrices.png`, `correlated_gaussian_response.png`, and `correlated_gaussian_paired_effects.png`; report both sensitivity and accuracy.
-5. Check that AR(1)'s expected response remains unchanged across covariance patterns; investigate whether Transformer's paired differences are large relative to noise-draw variation.
+1. Review the [three covariance figures](figures/) and the [confirmed results report](CORRELATED_GAUSSIAN.md).
+2. Repeat model training over multiple independent seeds, and evaluate variability across trained models.
+3. Study norm-matched perturbation directions and a controlled AR(2) generator with longer memory.
+4. Add multiple forecasting horizons before tackling formal statistical-manifold metrics.
 
 The [uploaded directional graph](figures/directional_sensitivity.png) and its interpretation are already preserved. Publishing the raw directional CSV remains optional if exact numerical follow-up analysis is needed.
 
