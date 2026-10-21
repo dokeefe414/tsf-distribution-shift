@@ -1,5 +1,10 @@
+"""Historical Kalman demonstration: traces are posterior filtered estimates, not pre-observation forecasts."""
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+PLOT_DIRECTORY = Path(__file__).resolve().parents[1] / 'plots'
+PLOT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------
 # 1. Generate Synthetic Data
@@ -105,11 +110,10 @@ plt.plot(t, x_cp, label="Change-Point KF", linewidth=2)
 
 plt.axvline(x=n//2, color='red', linestyle='--', label="Distribution Shift")
 
-plt.title("Kalman Filter Comparison")
+plt.title("Kalman Filtered Estimates (Post-update, not forecasts)")
 plt.xlabel("Time")
 plt.ylabel("Value")
 plt.legend()
 
-plt.savefig("tsf-distribution-shift/kalman/plots/combined_kalman.png")
-plt.show()combined_kalman.png")
+plt.savefig(PLOT_DIRECTORY / "combined_kalman.png")
 plt.show()
