@@ -2,14 +2,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
-import matplotlib
-
-matplotlib.use('TkAgg')
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / 'data' / 'synthetic' / 'complex_time_series.csv'
+PLOT = ROOT / 'plots' / 'arima_complex.png'
+PLOT.parent.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------
 # 1. Load Complex Data
 # -----------------------------
-df = pd.read_csv("tsf-distribution-shift/data/synthetic/complex_time_series.csv")
+df = pd.read_csv(DATA)
 
 y = df["value"].values
 t = df["time"].values
@@ -31,7 +33,7 @@ model_fit = model.fit()
 # -----------------------------
 # 4. Rolling Forecast (IMPORTANT)
 # -----------------------------
-predictions = list(train)
+predictions = np.full(len(y), np.nan, dtype=float)  # No training-regime predictions
 
 history = list(train)
 
@@ -40,7 +42,7 @@ for i in range(len(test)):
     model_fit = model.fit()
 
     yhat = model_fit.forecast()[0]
-    predictions.append(yhat)
+    predictions[train_size + i] = yhat
 
     # Add actual value to history (this is key)
     history.append(test[i])
@@ -48,7 +50,7 @@ for i in range(len(test)):
 # -----------------------------
 # 5. Convert to array
 # -----------------------------
-predictions = np.array(predictions)
+# Training positions remain NaN: not genuine held-out forecasts
 
 # -----------------------------
 # 6. Plot
@@ -66,14 +68,12 @@ plt.xlabel("Time")
 plt.ylabel("Value")
 plt.legend()
 
-plt.savefig("tsf-distribution-shift/plots/arima_complex.png")
+plt.savefig(PLOT)
 plt.show()
 
 # -----------------------------
 # 7. Evaluate
 # -----------------------------
-mse_before = np.mean((y[:200] - predictions[:200])**2)
-mse_after = np.mean((y[200:] - predictions[200:])**2)
-
-print("MSE Before Shift:", mse_before)
-print("MSE After Shift:", mse_after)
+mse_after = np.mean((y[train_size:] - predictions[train_size:])**2)
+print("Pre-shift MSE: N/A (no training-regime held-out forecasts)")
+print("Post-shift rolling one-step MSE:", mse_after)

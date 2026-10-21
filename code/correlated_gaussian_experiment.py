@@ -82,7 +82,7 @@ def correlated_noise(z: np.ndarray, correlation: np.ndarray, sigma: float) -> np
 
 def plot_correlation_profiles(matrices, destination):
     """Visualize designed covariance correlations, not empirical estimates."""
-    fig, axes = plt.subplots(1, len(matrices), figsize=(14, 3.5), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, len(matrices), figsize=(14, 4.2), sharex=True, sharey=True, layout="constrained")
     for axis, (name, matrix) in zip(axes, matrices.items()):
         im = axis.imshow(matrix, cmap="coolwarm", vmin=-1, vmax=1, interpolation="nearest")
         axis.set_title(name.replace("_", " "), fontsize=10)
@@ -90,8 +90,7 @@ def plot_correlation_profiles(matrices, destination):
         axis.set_xticks([0, WINDOW - 1], [1, WINDOW])
         axis.set_yticks([0, WINDOW - 1], [1, WINDOW])
     axes[0].set_ylabel("Input position")
-    fig.colorbar(im, ax=axes.tolist(), label="Correlation", shrink=0.78)
-    fig.subplots_adjust(left=0.05, right=0.88, top=0.83, bottom=0.17, wspace=0.15)
+    fig.colorbar(im, ax=axes.tolist(), label="Correlation", shrink=0.72, fraction=0.02, pad=0.025)
     fig.savefig(destination, dpi=160)
     plt.close(fig)
 

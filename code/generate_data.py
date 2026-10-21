@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+DATA_OUTPUT = ROOT / 'data' / 'synthetic' / 'synthetic_shift_v1.csv'
+PLOT_OUTPUT = ROOT / 'plots' / 'synthetic_shift.png'
+DATA_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+PLOT_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -36,7 +42,7 @@ df = pd.DataFrame({
 })
 
 # Save to CSV
-df.to_csv("../data/synthetic/synthetic_shift_v1.csv", index=False)
+df.to_csv(DATA_OUTPUT, index=False)
 # Plot the time series
 plt.figure(figsize=(10, 5))
 plt.plot(t, y, label="Synthetic Time Series")
@@ -50,7 +56,7 @@ plt.ylabel("Value")
 plt.legend()
 
 # Save the plot
-plt.savefig("../plots/synthetic_shift.png")
+plt.savefig(PLOT_OUTPUT)
 
 # Show the plot
 plt.show()

@@ -1,7 +1,12 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+DATA_OUTPUT = ROOT / 'data' / 'synthetic' / 'complex_time_series.csv'
+PLOT_OUTPUT = ROOT / 'plots' / 'complex_data.png'
+DATA_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+PLOT_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
  
 # -----------------------------
 # 1. Setup
@@ -26,14 +31,14 @@ for i in range(2, n):
         y[i] = a1 * y[i-1] + a2 * y[i-2] + noise
  
     elif i < 400:
-        # Regime 2: near-unit-root (very persistent), high noise
+        # Regime 2: changed autoregressive weights and higher noise
         # nonlinear term added — tanh creates saturation effect
         a1, a2 = 0.95, -0.3
         noise = np.random.normal(0, 20)
         y[i] = a1 * y[i-1] + a2 * y[i-2] + 10 * np.tanh(y[i-1] / 100) + noise
  
     else:
-        # Regime 3: sign flip on a1, chaotic behavior
+        # Regime 3: sign flip on a1; chaos is not established
         a1, a2 = -0.4, 0.6
         noise = np.random.normal(0, 12)
         y[i] = a1 * y[i-1] + a2 * y[i-2] + noise
@@ -98,8 +103,8 @@ y[430] += -300   # negative spike too
 # Noise burst region (wider)
 y[300:360] += np.random.normal(0, 60, 60)
  
-# Abrupt variance collapse (models won't expect it)
-y[370:400] += np.random.normal(0, 1, 30)  # suddenly very quiet
+# Extra low-amplitude noise; this does not collapse total variance
+y[370:400] += np.random.normal(0, 1, 30)  # other components still vary
  
 # Slow gradual drift that accelerates
 y += 0.001 * (time ** 2) * 0.05
@@ -112,17 +117,15 @@ y = y.astype(np.float32)
 # -----------------------------
 # 9. Save
 # -----------------------------
-os.makedirs("tsf-distribution-shift/data/synthetic", exist_ok=True)
- 
 df = pd.DataFrame({"time": time, "value": y})
-df.to_csv("tsf-distribution-shift/data/synthetic/complex_time_series.csv", index=False)
+df.to_csv(DATA_OUTPUT, index=False)
  
 print("=== Data Summary ===")
 print(f"Total points : {n}")
 print(f"Regime 1 (0-199)   | mean={y[:200].mean():.1f}, std={y[:200].std():.1f}")
 print(f"Regime 2 (200-399) | mean={y[200:400].mean():.1f}, std={y[200:400].std():.1f}")
 print(f"Regime 3 (400-599) | mean={y[400:].mean():.1f}, std={y[400:].std():.1f}")
-print("Data saved to tsf-distribution-shift/data/synthetic/complex_time_series.csv")
+print(f"Data saved to {DATA_OUTPUT}")
  
 # -----------------------------
 # 10. Plot with annotations
@@ -135,7 +138,7 @@ ax.plot(time, y, label="Complex Time Series", color="steelblue", linewidth=1)
 ax.axvline(x=200, color='red',    linestyle='--', linewidth=1.5, label="Shift 1 (t=200)")
 ax.axvline(x=400, color='green',  linestyle='--', linewidth=1.5, label="Shift 2 (t=400)")
 ax.axvspan(300, 360, alpha=0.1, color='orange', label="Noise Burst")
-ax.axvspan(370, 400, alpha=0.1, color='purple', label="Variance Collapse")
+ax.axvspan(370, 400, alpha=0.1, color='purple', label="Low-amplitude additional noise")
 ax.set_title("Challenging Synthetic Time Series")
 ax.set_ylabel("Value")
 ax.legend()
@@ -155,6 +158,5 @@ ax2.legend()
 ax2.grid(True, alpha=0.3)
  
 plt.tight_layout()
-os.makedirs("tsf-distribution-shift/plots", exist_ok=True)
-plt.savefig("tsf-distribution-shift/plots/complex_data.png", dpi=150)
+plt.savefig(PLOT_OUTPUT, dpi=150)
 plt.show()

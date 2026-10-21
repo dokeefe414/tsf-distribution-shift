@@ -2,12 +2,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
-import os
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / 'data' / 'synthetic' / 'complex_time_series.csv'
+LOG = ROOT / 'data' / 'synthetic' / 'arima_fit_log.csv'
+METRICS = ROOT / 'data' / 'synthetic' / 'full_metrics.csv'
+PLOT = ROOT / 'plots' / 'model_comparison.png'
+LOG.parent.mkdir(parents=True, exist_ok=True)
+PLOT.parent.mkdir(parents=True, exist_ok=True)
  
 # -----------------------------
 # 1. Load Data
 # -----------------------------
-df = pd.read_csv("tsf-distribution-shift/data/synthetic/complex_time_series.csv")
+df = pd.read_csv(DATA)
  
 y = df["value"].values
 t = df["time"].values
@@ -20,10 +27,11 @@ def mse(true, pred):
     return np.mean((true - pred) ** 2)
  
 def nmse(true, pred):
-    """Normalized MSE: MSE divided by variance of true signal.
-       NMSE < 1 means model beats a naive mean predictor.
-       NMSE = 1 means model is as bad as predicting the mean.
-       NMSE > 1 means model is worse than predicting the mean."""
+    """MSE divided by evaluation-regime variance (descriptive normalization).
+
+       Uses variance of evaluation targets, so this is not a leakage-free
+       mean-forecast baseline. Be cautious across regimes.
+       """
     return np.mean((true - pred) ** 2) / np.var(true)
  
 def mae(true, pred):
@@ -85,10 +93,7 @@ for i in range(train_size, n):
 arima_preds = np.array(arima_preds)
  
 # Save ARIMA log
-os.makedirs("tsf-distribution-shift/data/synthetic", exist_ok=True)
-pd.DataFrame(arima_log).to_csv(
-    "tsf-distribution-shift/data/synthetic/arima_fit_log.csv", index=False
-)
+pd.DataFrame(arima_log).to_csv(LOG, index=False)
 print("\nARIMA fit log saved.")
  
 # -----------------------------
@@ -219,13 +224,12 @@ for window_name, (true, arima_w, kf_w, akf_w) in windows.items():
  
 # Save full results
 results_df = pd.DataFrame(rows)
-results_df.to_csv("tsf-distribution-shift/data/synthetic/full_metrics.csv", index=False)
-print("\nFull metrics saved to tsf-distribution-shift/data/synthetic/full_metrics.csv")
+results_df.to_csv(METRICS, index=False)
+print(f"\nFull metrics saved to {METRICS}")
  
 # -----------------------------
 # 7. Plot
 # -----------------------------
-os.makedirs("tsf-distribution-shift/plots", exist_ok=True)
  
 arima_plot = np.full(n, np.nan)
 arima_plot[train_size:] = arima_preds
@@ -270,7 +274,7 @@ ax3.legend()
 ax3.grid(True, alpha=0.3)
  
 plt.tight_layout()
-plt.savefig("tsf-distribution-shift/plots/model_comparison.png", dpi=150)
+plt.savefig(PLOT, dpi=150)
 plt.show()
  
 print("\nPlot saved. Done.")

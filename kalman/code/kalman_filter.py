@@ -1,5 +1,9 @@
+"""Historical posterior Kalman filter estimates, not one-step forecasts."""
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+PLOT_DIRECTORY = Path(__file__).resolve().parents[1] / 'plots'
+PLOT_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------
 # 1. Generate Synthetic Data 
@@ -55,7 +59,7 @@ for k in range(1, n):
 plt.figure(figsize=(12, 6))
 
 plt.plot(t, y, label="Actual Data", alpha=0.7)
-plt.plot(t, x_hat, label="Kalman Prediction", linewidth=2)
+plt.plot(t, x_hat, label="Kalman filtered estimate", linewidth=2)
 
 # Mark shift
 plt.axvline(x=n//2, color='red', linestyle='--', label="Distribution Shift")
@@ -66,6 +70,6 @@ plt.ylabel("Value")
 plt.legend()
 
 # Save plot
-plt.savefig("tsf-distribution-shift/kalman/plots/kalman_result.png")
+plt.savefig(PLOT_DIRECTORY / "kalman_result.png")
 
 plt.show()
