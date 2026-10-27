@@ -1,7 +1,21 @@
 # Research status and advisor-aligned roadmap
 
-**Updated:** October 20, 2026  
+**Updated:** October 27, 2026  
 **Study:** forecasting under distribution shift, with emphasis on perturbation response.
+
+## October 27: Fanchao's controlled-generator framework (initial implementation)
+
+The newest advisor direction is to study `dx/dt = g(x,u,t)`, with random external control `u`, time-varying dynamics, generated trajectories, separate sampling, and one-step forecasters. It specifically calls for **separating perturbations to the generator** from **perturbations to observations and forecasts**, followed by GRU/LSTM comparisons, phase-change tests and online adaptation.
+
+Implemented in [controlled_ode_framework.py](../code/controlled_ode_framework.py), [run_controlled_ode.py](../code/run_controlled_ode.py), with five passing [unit checks](../code/test_controlled_ode.py):
+
+- Nonlinear ODE `dx/dt = a(t)x - x³ + u(t)`, with a known coefficient switch at time 60.
+- Seeded, stochastic control sequence; matched trajectory runs with either a control offset or parameter offset beginning at time 80.
+- Regular and irregular samplers; fixed one-step linear autoregression trained on pre-switch samples.
+- Measurement-noise-only comparison that does **not** change the generator.
+- Archived first-run response diagnostics in [CONTROLLED_ODE_FIRST_RUN.csv](CONTROLLED_ODE_FIRST_RUN.csv), detailed methods and caveats in [CONTROLLED_ODE_FRAMEWORK.md](CONTROLLED_ODE_FRAMEWORK.md).
+
+**Not yet completed:** GRU/LSTM training, Transformer retraining on ODE outputs, multiple generator seeds, confidence intervals, online learning or phase-change detection. The original AR(1)/Transformer directional and covariance results are preserved as earlier evidence for **input** sensitivity, rather than treated as evidence about generator sensitivity.
 
 ## Historical work already in this repository
 
@@ -44,10 +58,10 @@ Source records: [Transformer training run](transformer_experiment/initial_result
 
 ## Immediate next deliverable
 
-1. Review the [three covariance figures](figures/) and the [confirmed results report](CORRELATED_GAUSSIAN.md).
-2. Repeat model training over multiple independent seeds, and evaluate variability across trained models.
-3. Study norm-matched perturbation directions and a controlled AR(2) generator with longer memory.
-4. Add multiple forecasting horizons before tackling formal statistical-manifold metrics.
+1. Run the new ODE experiment on Windows and inspect paired generator/forecast responses and the saved trajectory plot.
+2. Connect one-step GRU, LSTM and Transformer forecasters to the **same** ODE-sampled training/evaluation data.
+3. Repeat multiple control seeds and intervention magnitudes with uncertainty estimates before comparing sensitivity.
+4. Define a regime-change detection metric, followed by an online-learning adaptation experiment.
 
 The [uploaded directional graph](figures/directional_sensitivity.png) and its interpretation are already preserved. Publishing the raw directional CSV remains optional if exact numerical follow-up analysis is needed.
 

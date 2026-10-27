@@ -27,3 +27,6 @@ reports/transformer_experiment/directional_sensitivity.png
 reports/transformer_experiment/correlated_gaussian_*.csv
 reports/transformer_experiment/correlated_gaussian_*.png
 reports/transformer_experiment/correlated_gaussian_config.json
+
+# Regenerable local ODE experiments (archive selected results explicitly)
+reports/ode_experiment/

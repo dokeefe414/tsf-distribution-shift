@@ -5,6 +5,26 @@ Research project exploring how time-series forecasting models respond to nonstat
 **Researcher:** Daniel O'Keefe  
 **Research focus:** understanding forecasting behavior, not just ranking models by prediction error.
 
+## October 2026 update: controlled dynamical-system framework
+
+Following Fanchao's whiteboard discussion, the next stage separates **generator dynamics and interventions** from **observation noise** and **forecasting-model response**. We have added a first runnable nonlinear ODE baseline:
+
+- **Generator:** `dx/dt = a(t)x - x³ + u(t)`; `a(t)` switches sign at `t=60`, and `u(t)` is a seeded random control sequence plus a sinusoid.
+- **Simulation and sampling:** RK4 continuous-time approximation, both regular and irregular sampling of the same trajectories.
+- **Paired interventions:** change control `u`, change parameter `a`, or add observation noise **without changing the generator**.
+- **One-step forecasting:** initial 12-lag ridge linear baseline trained before the regime switch; frozen model compared with generator response.
+- **Current scope:** first tested scaffold and reproducible diagnostics, **not yet** a GRU/LSTM/Transformer comparison, online-learning study, or phase-transition detector.
+
+**Run the new code from the repository root:**
+
+```powershell
+py -m pip install -r requirements-perturbation.txt
+py -m unittest discover -s code -p "test_controlled_ode.py" -v
+py code/run_controlled_ode.py
+```
+
+See [the full generator framework, equations, first-run results and next steps](reports/CONTROLLED_ODE_FRAMEWORK.md), [the ODE code](code/controlled_ode_framework.py), [the runnable experiment](code/run_controlled_ode.py), and [archived first-run metrics](reports/CONTROLLED_ODE_FIRST_RUN.csv). Generated plots and CSVs appear locally under `reports/ode_experiment/`.
+
 ## Research questions
 
 1. How do forecasting models behave when the data-generating distribution changes?
@@ -13,7 +33,7 @@ Research project exploring how time-series forecasting models respond to nonstat
 4. How does model architecture or training change the response?
 5. Later: what happens at longer forecasting horizons and different time scales?
 
-The current priority is question 2, using a deliberately simple synthetic baseline. This isolates input sensitivity from the many simultaneous shifts in the earlier complex generator.
+The earlier stationary AR(1) experiments isolated input sensitivity. The current extension adds controlled changes to the generator itself and compares generator response with the response of a frozen forecaster.
 
 ## Project stages
 
@@ -26,7 +46,8 @@ The current priority is question 2, using a deliberately simple synthetic baseli
 | **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Completed successfully in VS Code; metrics recorded** |
 | **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Completed in VS Code; original plot uploaded to GitHub** |
 | **4d. Correlated Gaussian perturbations** | **Change input covariance without changing marginal noise variance** | **Completed in Windows VS Code; original graphs uploaded** |
-| 5. Broader analysis | Covariance directions, distribution families, long-horizon forecasts, surrogate fidelity, information geometry | Planned |
+| **5. Controlled ODE and sampling** | **Time-varying nonlinear generator, seeded control, sampled trajectories, paired generator/observation interventions, simple frozen forecaster** | **Initial implementation tested; GRU/LSTM not yet implemented** |
+| 6. Broader analysis | GRU/LSTM, detection of regime changes, online learning, long-horizon studies | Planned |
 
 ## Run the new Transformer / perturbation experiment
 
