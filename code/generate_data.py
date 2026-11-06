@@ -30,7 +30,7 @@ x2 = np.random.normal(mean2, std2, n // 2)
 # Combine the two segments
 x = np.concatenate([x1, x2])
 
-# Apply transformation (like your advisor suggested)
+# Apply a nonlinear observation transformation
 # Y_t = X_t^2 + 3 + noise
 noise = np.random.normal(0, 1, n)
 y = x**2 + 3 + noise
