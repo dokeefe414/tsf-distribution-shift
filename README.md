@@ -1,198 +1,142 @@
-# Time Series Forecasting Under Distribution Shift and Perturbations
-
-Research project exploring how time-series forecasting models respond to nonstationarity, changing temporal dependencies, and **controlled input perturbations**.
+# Time-Series Forecasting Under Distribution Shift
 
 **Researcher:** Daniel O'Keefe  
-**Research focus:** understanding forecasting behavior, not just ranking models by prediction error.
+**Focus:** mathematically grounded sensitivity analysis of dynamical systems and one-step time-series forecasters.
 
-## October 2026 update: controlled dynamical-system framework
+This repository investigates a question that goes beyond ordinary forecasting accuracy: **when a system responds to a controlled change, does a forecasting model reproduce that response faithfully?**
 
-Following Fanchao's whiteboard discussion, the next stage separates **generator dynamics and interventions** from **observation noise** and **forecasting-model response**. We have added a first runnable nonlinear ODE baseline:
+The project combines a nonlinear ODE generator, stochastic control sequences, trajectory sampling, one-step forecasting, and *separate* measurements of generator sensitivity, model sensitivity and distribution change. It also retains earlier Gaussian AR(1), Transformer, ARIMA and Kalman experiments as exploratory baselines.
 
-- **Generator:** `dx/dt = a(t)x - x³ + u(t)`; `a(t)` switches sign at `t=60`, and `u(t)` is a seeded random control sequence plus a sinusoid.
-- **Simulation and sampling:** RK4 continuous-time approximation, both regular and irregular sampling of the same trajectories.
-- **Paired interventions:** change control `u`, change parameter `a`, or add observation noise **without changing the generator**.
-- **One-step forecasting:** initial 12-lag ridge linear baseline trained before the regime switch; frozen model compared with generator response.
-- **Current scope:** first tested scaffold and reproducible diagnostics, **not yet** a GRU/LSTM/Transformer comparison, online-learning study, or phase-transition detector.
+> **Research status (November 2026):** The ODE generator and a linear one-step benchmark are implemented. Tangent-linear sensitivity equations, centered finite-difference checks, multi-seed evaluations and empirical 1D optimal transport are now implemented and tested. **GRU/LSTM training on the ODE generator, mathematical detection guarantees, Riemannian/Fisher geometry and online adaptation have not been completed.** The sensitivity equations are established mathematics, not a claimed new theorem.
 
-**Run the new code from the repository root:**
+## Scientific motivation
+
+Forecast error and response fidelity answer different questions. A model can predict the next value accurately on ordinary data, but still change its prediction incorrectly after a physical intervention. Conversely, a model that barely responds to noisy inputs is not necessarily a good physical forecaster.
+
+We therefore distinguish:
+
+1. **System response** \(\Delta_G\): change in the *true* trajectory after modifying a control or generator parameter.
+2. **Model response** \(\Delta_F\): change in a *frozen model's* prediction when presented with the corresponding altered observation window.
+3. **Response mismatch** \(\lvert \Delta_F-\Delta_G\rvert\): how closely the predicted change tracks the actual change.
+4. **Distribution response**: how the law of states across independent random control realizations changes, initially measured with empirical one-dimensional Wasserstein distances.
+
+These measurements should be reported together with forecast RMSE, numerical error and independent-run uncertainty. Their significance and any claim of novelty must be tested against established alternatives.
+
+## Current generator
+
+The nonlinear state follows:
+
+\[
+\frac{dx}{dt} = a(t)x-x^3+b\,u(t), \qquad x(0)=0.1,\quad b=1.
+\]
+
+- \(a(t)=-0.8\) before time 60 and \(a(t)=0.6\) afterwards. The switch is *built into the generator*.
+- \(u(t)=0.08\sin(0.2t)+0.08Z_k\), where each \(Z_k\) is a seeded standard-normal random control level held for about one time unit.
+- The state is integrated with fourth-order Runge–Kutta at \(dt=0.05\) and observed regularly every 0.25 time units (or via an optional irregular sampler).
+- At time 80 an experiment can change either \(u(t)\) or \(a(t)\). Baseline and intervention runs use the **same initial condition and random control realization**.
+- Random control does not make this an Itô SDE. The simulation is a deterministic ODE **conditional on a sampled control path**.
+
+The baseline forecaster is a 12-lag ridge linear predictor trained on one pre-switch trajectory. It is deliberately simple and kept frozen for sensitivity comparison. Future neural networks will be compared on matched data, horizons and information sets.
+
+## Run it locally
+
+Open a terminal at the repository root. On Windows with the Python launcher:
+
+```powershell
+git pull origin main
+py -m pip install -r requirements-ode.txt
+py -m unittest discover -s code -p "test_controlled_ode.py" -v
+py -m unittest discover -s code -p "test_ode_sensitivity.py" -v
+py code/run_controlled_ode.py
+py code/run_sensitivity_validation.py --seeds 12 --bootstrap 500 --epsilon 0.04
+```
+
+Use `python` instead of `py` on systems without the Windows launcher. The ODE workflow requires only NumPy and Matplotlib, not PyTorch. The earlier Transformer experiments have their own dependency list and commands below.
+
+**Generated local files** (ignored by Git): `reports/ode_experiment/` and `reports/sensitivity_experiment/`. These include plots, per-seed CSVs, derivative errors, bootstrap summaries, Wasserstein distances and configuration JSONs.
+
+For installation, expected outputs, seed behavior, troubleshooting, and numerical checks, see [reproducibility guide](docs/REPRODUCIBILITY.md).
+
+## Mathematically validated sensitivity
+
+For an intervention beginning at \(t_0\), define the local control sensitivity \(s_u=\partial x/\partial\varepsilon\) and parameter sensitivity \(s_a=\partial x/\partial\delta\), both evaluated at zero intervention:
+
+\[
+\dot s_u=(a-3x^2)s_u+b\,\mathbf{1}_{t\ge t_0},
+\qquad
+\dot s_a=(a-3x^2)s_a+x\,\mathbf{1}_{t\ge t_0}.
+\]
+
+These equations follow from the chain rule and are integrated alongside the baseline trajectory. They are checked against centered differences \([x_{+h}-x_{-h}]/(2h)\) at several step sizes. The validation compares numerical derivatives **for the same discretized model**, not exact continuous-time integration error.
+
+In a 12-seed exploratory evaluation, interventions at time 80 were compared with a frozen linear forecaster using samples whose target time is at least 82. Results from the first run:
+
+| Intervention, amplitude 0.04 | Mean system absolute response | Mean forecast absolute response | Response mismatch |
+| --- | ---: | ---: | ---: |
+| Control offset | 0.038001 | 0.037353 | 0.000725 |
+| Generator-parameter offset | 0.025836 | 0.025393 | 0.000455 |
+
+These are **illustrative pilot measurements**, not evidence that linear forecasting is generally optimal or that a phase change can be predicted. The model sees only past states, not future control. See [full numerical report](reports/SENSITIVITY_VALIDATION.md) for finite-difference accuracy, seed-level bootstrap intervals, distribution distances and limitations.
+
+## Methodology and project map
+
+| Component | Code | Method |
+| --- | --- | --- |
+| Controlled ODE and samplers | [controlled_ode_framework.py](code/controlled_ode_framework.py) | Time-varying cubic dynamics, seeded control, RK4, regular/irregular observation |
+| Initial ODE experiment | [run_controlled_ode.py](code/run_controlled_ode.py) | Control/parameter/noise interventions and fixed linear forecast |
+| Variational sensitivity and 1D OT | [ode_sensitivity.py](code/ode_sensitivity.py) | Coupled tangent equations, centered differences, exact empirical 1D W1/W2 |
+| Multi-seed numerical study | [run_sensitivity_validation.py](code/run_sensitivity_validation.py) | Numerical consistency, paired responses, seed bootstrap, fixed-time marginal distributions |
+| Unit checks | [test_controlled_ode.py](code/test_controlled_ode.py), [test_ode_sensitivity.py](code/test_ode_sensitivity.py) | Reproducibility, time causality, differential consistency and metric invariants |
+| Stationary AR(1) generator | [generate_perturbation_data.py](code/generate_perturbation_data.py) | 5,000 observations, 32-lag one-step prediction |
+| Custom attention forecaster | [transformer_model.py](code/transformer_model.py) | PyTorch training from scratch; chronological 70/15/15 split |
+| AR(1) versus attention | [linear_baseline_comparison.py](code/linear_baseline_comparison.py) | Matched Gaussian input perturbations |
+| Directional response | [directional_perturbation.py](code/directional_perturbation.py) | Position-by-position input sensitivity |
+| Correlated Gaussian response | [correlated_gaussian_experiment.py](code/correlated_gaussian_experiment.py) | Input-noise covariance structure at controlled variance |
+
+### Earlier experiments
+
+The original AR(1) and Transformer experiments are kept separate from the controlled-ODE program. They tested **observational input noise**, not changes in the underlying dynamics. Their confirmed historical results, including test RMSE and positional sensitivity, are archived in [the research status](reports/RESEARCH_STATUS.md), [the perturbation methods](reports/PERTURBATION_METHODS.md) and [the correlated-noise report](reports/CORRELATED_GAUSSIAN.md). The older Kalman/ARIMA work is exploratory and not presented as a fully fair benchmark.
+
+To reproduce the older experiment on a machine with PyTorch installed:
 
 ```powershell
 py -m pip install -r requirements-perturbation.txt
-py -m unittest discover -s code -p "test_controlled_ode.py" -v
-py code/run_controlled_ode.py
+py code/generate_perturbation_data.py
+py code/test_perturbation_pipeline.py
+py code/transformer_model.py
+py code/perturbation_experiment.py
+py code/test_linear_baseline.py
+py code/linear_baseline_comparison.py
+py code/test_directional_perturbation.py
+py code/directional_perturbation.py
+py code/test_correlated_gaussian.py
+py code/correlated_gaussian_experiment.py
 ```
 
-See [the full generator framework, equations, first-run results and next steps](reports/CONTROLLED_ODE_FRAMEWORK.md), [the ODE code](code/controlled_ode_framework.py), [the runnable experiment](code/run_controlled_ode.py), and [archived first-run metrics](reports/CONTROLLED_ODE_FIRST_RUN.csv). Generated plots and CSVs appear locally under `reports/ode_experiment/`.
+Training artifacts are generated locally. The plots and archived summaries from previously completed runs remain under `reports/`.
 
-## Research questions
+## Research documentation
 
-1. How do forecasting models behave when the data-generating distribution changes?
-2. How sensitive are one-step forecasts to small, controlled perturbations in historical observations?
-3. How do perturbation **magnitude, direction, covariance structure, and distribution family** affect the forecast response?
-4. How does model architecture or training change the response?
-5. Later: what happens at longer forecasting horizons and different time scales?
+- [Mathematical derivations](docs/MATHEMATICAL_DERIVATIONS.md): chain rule, variational ODEs, Jacobian stability, finite differences and sensitivity mismatch.
+- [Probability, geometry and physics](docs/PROBABILITY_GEOMETRY_AND_PHYSICS.md): random control paths, stochastic versus deterministic dynamics, empirical optimal transport, Fisher information and physical interpretation.
+- [Experimental protocol](docs/EXPERIMENT_PROTOCOL.md): falsifiable hypotheses, independent replicates, baselines, leakage, numerical safeguards and failure cases.
+- [Reproducibility guide](docs/REPRODUCIBILITY.md): install and run commands, output definitions and troubleshooting.
+- [Roadmap and learning plan](docs/ROADMAP_AND_READING.md): feasible staged progression toward neural forecasting, regime detection and geometric statistics.
+- [Numerical validation and first results](reports/SENSITIVITY_VALIDATION.md): recorded finite-difference, bootstrap and optimal-transport outcomes.
+- [Controlled generator overview](reports/CONTROLLED_ODE_FRAMEWORK.md): experiment narrative, sampling and perturbation concepts.
+- [Research status](reports/RESEARCH_STATUS.md): completed versus planned work and historical caveats.
 
-The earlier stationary AR(1) experiments isolated input sensitivity. The current extension adds controlled changes to the generator itself and compares generator response with the response of a frozen forecaster.
+## Scientific limitations and open questions
 
-## Project stages
+The current regime change is imposed at a known time; it is **not** an algorithmically detected transition, and its forcing means the observed trajectory should not be called an ideal unforced pitchfork bifurcation. The 12 independent evaluation seeds provide a useful pilot but are too few for broad claims. The bootstrap reflects *control-seed* variability only and excludes retraining uncertainty. Distribution comparisons currently cover a **single scalar marginal at time 100**, not a joint path distribution. The tangent equations, bootstrap and Wasserstein implementation are established tools; scientific novelty remains to be demonstrated by rigorous comparative experiments.
 
-| Stage | Contents | Status |
-| --- | --- | --- |
-| 1. Simple shifting synthetic data | Abrupt mean/variance changes and nonlinear observation rule | Implemented |
-| 2. More challenging time series | AR dependencies, nonlinear term, changing seasonality, outliers and varying noise | Implemented |
-| 3. Classical methods | Rolling ARIMA, standard KF and adaptive KF comparisons | Implemented; methodology needs further refinement |
-| **4. Perturbation response** | **AR(1) generator, custom Transformer, Gaussian input perturbations** | **Executed successfully on Windows; first results recorded** |
-| **4b. Model baseline comparison** | **Fitted linear AR(1) vs. frozen Transformer, shared perturbations** | **Completed successfully in VS Code; metrics recorded** |
-| **4c. Directional sensitivity** | **Perturb each historical input position independently** | **Completed in VS Code; original plot uploaded to GitHub** |
-| **4d. Correlated Gaussian perturbations** | **Change input covariance without changing marginal noise variance** | **Completed in Windows VS Code; original graphs uploaded** |
-| **5. Controlled ODE and sampling** | **Time-varying nonlinear generator, seeded control, sampled trajectories, paired generator/observation interventions, simple frozen forecaster** | **Initial implementation tested; GRU/LSTM not yet implemented** |
-| 6. Broader analysis | GRU/LSTM, detection of regime changes, online learning, long-horizon studies | Planned |
+Next steps: step-size convergence; larger control ensembles; explicit-control versus state-only forecasting; GRU/LSTM/Transformer comparisons with matched information; gradual parameter ramps; early-warning false-alarm and lead-time benchmarks; and only then more ambitious statistical-geometric analysis.
 
-## Run the new Transformer / perturbation experiment
+## References
 
-Open this repository in Visual Studio Code. In a terminal opened at the repository root, run:
+- Stoer and Bulirsch, *Introduction to Numerical Analysis*, sensitivity analysis of initial-value problems: https://www.math.kent.edu/~reichel/courses/numerical.analysis.2/Numerical-book.pdf
+- Peyré and Cuturi, *Computational Optimal Transport*: https://www.math.ucdavis.edu/~saito/data/acha.read.f19/peyre-cuturi_computational-optxport.pdf
+- Kuehn, *A mathematical framework for critical transitions*: https://www.sciencedirect.com/science/article/pii/S0167278911000443
+- Scheffer et al., *Early-warning signals for critical transitions*: https://www.nature.com/articles/nature08227
 
-    python -m pip install -r requirements-perturbation.txt
-    python code/generate_perturbation_data.py
-    python code/test_perturbation_pipeline.py
-    python code/transformer_model.py
-    python code/perturbation_experiment.py
-    python code/test_linear_baseline.py
-    python code/linear_baseline_comparison.py
-    python code/test_directional_perturbation.py
-    python code/directional_perturbation.py
-    python code/test_correlated_gaussian.py
-    python code/correlated_gaussian_experiment.py
-
-If Windows uses the Python launcher, replace `python` with `py`. Running the scripts from the root is easiest, although the scripts resolve their project paths relative to their own files.
-
-The generator creates the data; the first smoke test verifies split boundaries and forward/backward computation. Training saves a checkpoint and held-out predictions. The perturbation script generates the noise-magnitude response plot. Next, the baseline test and comparison evaluate a fitted linear AR(1) on the same held-out examples and paired noise draws as the frozen Transformer. The final two commands test and measure **position-by-position directional response** for all 32 historical observations. Existing local checkpoints are reused; retraining is not needed for directional evaluation.
-
-**No pretrained forecasting model is used.** The Transformer-style block explicitly implements multi-head scaled dot-product attention using query, key and value projections in PyTorch.
-
-### Experiment specification
-
-| Element | Current setup |
-| --- | --- |
-| Generator | Stationary Gaussian AR(1): `x[t] = 0.7*x[t-1] + eta[t]` |
-| Innovations | Independent `eta[t] ~ N(0, 1)` |
-| Length | 5,000 observations after 200 burn-in observations |
-| Split | Chronological 70% train / 15% validation / 15% test by *target time* |
-| Scaling | Fit mean and standard deviation on the training portion only |
-| Predictor | One-step-ahead custom Transformer-style encoder |
-| Historical input length | `L = 32` |
-| Network | 32-dimensional embeddings, four attention heads, one encoder block |
-| Training | AdamW, MSE, early stopping by validation loss |
-| Perturbation | `epsilon ~ N(0, sigma² I)` added to normalized **test inputs only** |
-| Sigma | `0, 0.01, 0.05, 0.10, 0.20` times the training standard deviation |
-| Repeats | 30 independent perturbation draws for each sigma in the isotropic sweep; 12 per input position by default in the new directional test |
-| Response | Mean absolute difference between perturbed and clean forecasts |
-| Accuracy | RMSE and NMSE measured against **unchanged original targets** |
-
-The same trained forecaster is used for all perturbation levels. The model sees only historical inputs for each target, not the target itself or later values.
-
-### Successful execution and recorded results (October 20, 2026)
-
-The scripts were run successfully in VS Code on Windows. The training smoke test passed, and Transformer training stopped after 10 epochs with the best validation loss at epoch 5.
-
-| Confirmed result from Windows run | Value |
-| --- | ---: |
-| Clean test MSE | 1.045586 |
-| Clean test MAE | 0.808803 |
-| Best normalized validation MSE | 0.495638 |
-| Mean absolute response, sigma=0.01 | 0.007119 |
-| Mean absolute response, sigma=0.10 | 0.070765 |
-| Mean absolute response, sigma=0.20 | 0.140584 |
-
-See [confirmed training and perturbation results](reports/transformer_experiment/initial_results.md), with [epoch-by-epoch training losses](reports/transformer_experiment/observed_training_2026-10-20.csv) and the [recorded 30-repeat summary](reports/transformer_experiment/observed_perturbation_2026-10-20.csv).
-
-The fitted AR(1) versus Transformer comparison **also completed successfully in the researcher's Windows VS Code terminal**. Its fitted slope was 0.716396, with clean test RMSE **1.004406** (linear) versus **1.022539** (Transformer). At sigma=0.10, mean absolute forecast response was **0.082423** (linear) versus **0.070765** (Transformer). See the [confirmed comparison report](reports/transformer_experiment/linear_baseline_validation.md) and [recorded table](reports/transformer_experiment/observed_linear_comparison_2026-10-20.csv).
-
-**Directional sensitivity was also run successfully on Windows.** The fitted AR(1) responds only to the most recent input (position 32), while the Transformer shows smaller nonzero responses to earlier positions. The [original directional PNG](reports/figures/directional_sensitivity.png) was subsequently uploaded directly to GitHub. The exact numeric directional CSVs have **not** been published. [Read the directional findings](reports/transformer_experiment/directional_findings_2026-10-20.md).
-
-**Correlated Gaussian experiment completed on Windows:** 20 noise repetitions per covariance pattern at normalized sigma 0.10. The fitted AR(1) response stayed near its theoretical 0.082499; Transformer response stayed near 0.070 with small covariance-related differences. View the [covariance matrices](reports/figures/correlated_gaussian_matrices.png), [forecast response](reports/figures/correlated_gaussian_response.png), and [paired effects](reports/figures/correlated_gaussian_paired_effects.png). See the [confirmed results report](reports/CORRELATED_GAUSSIAN.md).
-
-### Understand the method
-
-- [Research proposal (HTML)](reports/perturbation_proposal.html) — objectives, mathematical setup, justified distributions and future research directions.
-- [Perturbation methodology](reports/PERTURBATION_METHODS.md) — data flow, attention mathematics, leakage prevention, loss and evaluation.
-- [Transformer code walkthrough](code/TRANSFORMER_WALKTHROUGH.md) — explanations tied to the source code.
-- [Confirmed Windows run](reports/transformer_experiment/initial_results.md) — actual console results, training losses, sensitivity and forecast error.
-- [Confirmed AR(1) versus Transformer comparison](reports/transformer_experiment/linear_baseline_validation.md) — Windows results, paired perturbations, theory and interpretation.
-- [Directional perturbation protocol](reports/DIRECTIONAL_PERTURBATIONS.md) — all 32 input positions, formulas, outputs and interpretation.
-- [Directional findings, October 20](reports/transformer_experiment/directional_findings_2026-10-20.md) — confirmed screenshot observations, with precise-value limitations.
-- [Uploaded directional graph](reports/figures/directional_sensitivity.png) — native image from the researcher's experiment.
-- [Correlated Gaussian experiment](reports/CORRELATED_GAUSSIAN.md) — covariance patterns, formulas, evaluation design, locally verified behavior and next commands.
-- [Correlated Gaussian code walkthrough](code/CORRELATED_GAUSSIAN_WALKTHROUGH.md) — line-by-line conceptual explanation of the new experiment.
-- [Research status and advisor roadmap](reports/RESEARCH_STATUS.md) — progress through the September meeting goals.
-- [New generator](code/generate_perturbation_data.py), [model/trainer](code/transformer_model.py), [experiment](code/perturbation_experiment.py).
-
-### What the first results do *not* demonstrate
-
-A larger forecast response does **not** automatically imply worse forecasting accuracy; they are measured separately. This is a stationary baseline, not yet a controlled distribution-shift experiment. A single training seed does not establish general behavior; repeated training seeds, uncertainty intervals and sensitivity to the chosen window length belong in later experiments. The new linear comparison is a **baseline**, not evidence that one architecture is always superior.
-
-## Earlier distribution-shift research
-
-- `code/generate_data.py`: a 400-point synthetic example with one abrupt distribution shift.
-- `code/generate_complex_data.py`: a 600-point, three-regime synthetic process with lag dependence, nonlinearity, varying seasonality, variance shifts, trend and anomalies.
-- `code/arima_complex.py`: an early rolling ARIMA experiment.
-- `code/model_comparison.py`: rolling/windowed ARIMA versus standard and adaptive Kalman predictors. Prints selected ARIMA fitting information and records MSE, RMSE, MAE and normalized MSE.
-- `kalman/code/`: earlier Kalman variants developed for coursework and initial research investigations.
-- `data/synthetic/full_metrics.csv`: saved metrics from the earlier three-model comparison.
-- `plots/`, `kalman/plots/`: earlier visualizations.
-
-**Interpret earlier plots cautiously:** the adaptive KF in `model_comparison.py` can conflate distribution shifts with measurement noise, slowing its response. The older `arima_complex.py` copies training observations into its plotted prediction array, so its reported pre-shift MSE of zero is **not** a genuine forecast error. Some older scripts use working-directory-relative paths and have not been standardized. These are retained as historical experiments rather than treated as validated benchmarks.
-
-## Repository organization
-
-    code/
-      generate_data.py
-      generate_complex_data.py
-      arima_complex.py
-      model_comparison.py
-      generate_perturbation_data.py       # NEW
-      transformer_model.py                # NEW
-      perturbation_experiment.py          # NEW
-      test_perturbation_pipeline.py       # NEW
-      linear_baseline_comparison.py        # NEW
-      test_linear_baseline.py              # NEW
-      directional_perturbation.py          # NEW
-      test_directional_perturbation.py     # NEW
-      correlated_gaussian_experiment.py    # NEW
-      test_correlated_gaussian.py          # NEW
-      CORRELATED_GAUSSIAN_WALKTHROUGH.md   # NEW
-      publish_directional_results.py       # NEW, archive exact Windows outputs
-      TRANSFORMER_WALKTHROUGH.md          # NEW
-    data/synthetic/                      # baseline datasets and historical metrics
-    kalman/                              # earlier KF work
-    plots/                               # earlier visualizations
-    notebooks/
-    reports/
-      perturbation_proposal.html          # NEW
-      PERTURBATION_METHODS.md             # NEW
-      transformer_experiment/
-        initial_results.md               # NEW
-        observed_training_2026-10-20.csv  # NEW, printed training losses
-        observed_perturbation_2026-10-20.csv # NEW, printed summaries
-        linear_baseline_validation.md     # NEW
-        observed_linear_comparison_2026-10-20.csv # NEW
-        directional_findings_2026-10-20.md # NEW, screenshot-based findings
-    DIRECTIONAL_PERTURBATIONS.md           # NEW
-    CORRELATED_GAUSSIAN.md                # NEW
-    figures/
-      directional_sensitivity.png         # Original uploaded graph
-    RESEARCH_STATUS.md                     # NEW
-    requirements-perturbation.txt         # NEW
-
-The experiments generate datasets, checkpoint weights, per-draw statistics and PNG plots locally. Those large/reproducible outputs are git-ignored; the repository **does retain** small CSV snapshots transcribed from the confirmed Windows console output, code, and Markdown reports for reproducibility.
-
-## Reproducibility and limitations
-
-The generator, training and perturbation stages use fixed random seeds. Results can still vary across PyTorch versions, hardware, and platform configuration. The train/validation/test split uses chronological target indices; the validation/test *windows* may contain observations immediately preceding their split boundary, which is permitted in one-step forecasting when those observations are known at prediction time.
-
-This project is exploratory work in progress. Linear, directional and covariance perturbation experiments have been completed in Windows VS Code and selected plots uploaded. Next steps include multiple independent training seeds, controlled longer-memory data generators and long-horizon forecasting.
-
-## Latest research audit
-
-See [FINAL_REVIEW.md](reports/FINAL_REVIEW.md) for legacy-script fixes, the corrected interpretation of posterior Kalman estimates versus true forecasts, plotting updates and remaining scientific limitations.
+**This repository is an evolving research implementation, not a validated physical forecasting system.**

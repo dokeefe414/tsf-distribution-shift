@@ -30,3 +30,6 @@ reports/transformer_experiment/correlated_gaussian_config.json
 
 # Regenerable local ODE experiments (archive selected results explicitly)
 reports/ode_experiment/
+
+# Regenerated sensitivity validation outputs; small verified snapshots live in reports/
+reports/sensitivity_experiment/

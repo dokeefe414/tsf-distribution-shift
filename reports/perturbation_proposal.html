@@ -71,7 +71,7 @@ small{color:#58677c}ul{padding-left:24px}
 <p>After one-step experiments are validated, use autoregressive rollouts to study propagation of small input changes through many steps. For statistical-manifold studies, use parameterized distribution families (e.g. Gaussian mean and covariance paths) and potentially Fisher-information-based local distances. The current study does not compute geodesics or Riemannian geometry.</p>
 
 <h2>8. Interpretable surrogate and fidelity</h2>
-<p>A future surrogate S can approximate the Transformer F. Assess both <strong>output fidelity</strong> |S(X)-F(X)| and <strong>response fidelity</strong> |(S(X+ε)-S(X))-(F(X+ε)-F(X))|. They need not coincide. The meaning of the advisor's abbreviated “mutual D2” objective should be clarified before formalizing a joint optimization loss.</p>
+<p>A future surrogate S can approximate the Transformer F. Assess both <strong>output fidelity</strong> |S(X)-F(X)| and <strong>response fidelity</strong> |(S(X+ε)-S(X))-(F(X+ε)-F(X))|. They need not coincide. The informal “mutual D2” shorthand does not yet specify an objective; a joint optimization loss requires a precise mathematical definition.</p>
 
 <h2>9. Validity, limitations and deliverables</h2>
 <ul>

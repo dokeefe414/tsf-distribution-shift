@@ -31,7 +31,7 @@ For the exact figure, see [the original uploaded PNG](../figures/directional_sen
 
 The earlier confirmed **clean forecast RMSE** measurements were 1.004406 for fitted AR(1) and 1.022539 for the Transformer. They came from the previous clean/paired-noise experiment; they are not directional RMSE measurements read from this screenshot.
 
-## Key explanation for the advisor
+## Mathematical interpretation
 
 For fitted AR(1), the one-step forecast is `f(X) = a + b X[32]`. Under one-coordinate noise, changing positions 1–31 cannot affect the prediction, whereas perturbing position 32 does. In the Transformer, self-attention and the final forecasting head permit influence from any input position. The screenshot suggests the model mainly relies on the newest observation, but also reacts to older inputs.
 

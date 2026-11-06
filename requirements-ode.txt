@@ -1,0 +1,4 @@
+# Minimal independent environment for the controlled ODE and math validation.
+# Python 3.10+; older Transformer experiments use requirements-perturbation.txt.
+numpy>=1.24
+matplotlib>=3.7

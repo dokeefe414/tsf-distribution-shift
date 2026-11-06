@@ -1,6 +1,6 @@
 # Code walkthrough: correlated Gaussian perturbations
 
-This document explains [correlated_gaussian_experiment.py](correlated_gaussian_experiment.py) so that each component can be described to an advisor.
+This document explains [correlated_gaussian_experiment.py](correlated_gaussian_experiment.py) so each component can be examined, understood and reproduced.
 
 ## 1. What stays fixed?
 

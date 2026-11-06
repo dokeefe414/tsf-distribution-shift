@@ -9,7 +9,7 @@ Previous research stages measured how a Transformer and fitted linear AR(1) resp
 1. Different strengths of **independent Gaussian noise** added to all 32 input values.
 2. Noise at **one input position at a time**, revealing which past observations affect a prediction.
 
-The advisor's next question concerns the **distribution of the perturbation**, specifically multivariate Gaussian perturbations with tunable covariance. This experiment changes how noise at different historical positions is **correlated**, while controlling its marginal variance.
+The next experiment concerns the **distribution of the perturbation**, specifically multivariate Gaussian perturbations with tunable covariance. This experiment changes how noise at different historical positions is **correlated**, while controlling its marginal variance.
 
 A nontrivial result can be that covariance has little effect on a particular model. The purpose is to **measure** the response, not to engineer a difference.
 

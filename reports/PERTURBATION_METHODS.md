@@ -74,7 +74,7 @@ For one-step autoregressive rollouts, future predictions can be fed back into fu
 
 The Gaussian family can be parameterized by mean and covariance. One can later define paths through this parameter space, perturb data drawn from those distributions, and compare forecaster response. A Fisher-information metric is a possible way to formalize local distribution distance, but it is **not** calculated by the current experiment.
 
-A future interpretable surrogate `S` could be trained to approximate Transformer `F`. Two different fidelity questions then matter: output fidelity `|S(X)-F(X)|` and response fidelity `|(S(X+epsilon)-S(X))-(F(X+epsilon)-F(X))|`. These should be studied separately; the advisor's abbreviated "mutual D2" description should be clarified before a formal loss is selected.
+A future interpretable surrogate `S` could be trained to approximate Transformer `F`. Two different fidelity questions then matter: output fidelity `|S(X)-F(X)|` and response fidelity `|(S(X+epsilon)-S(X))-(F(X+epsilon)-F(X))|`. These should be studied separately; the informal "mutual D2" shorthand does not define a precise mathematical loss and must be formalized before use.
 
 ## Validity checks and reporting
 

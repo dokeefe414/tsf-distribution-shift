@@ -1,103 +1,73 @@
-# Controlled ODE generator: meeting follow-up (October 2026)
+# Controlled nonlinear ODE framework
 
-**Status:** First end-to-end research scaffold implemented and smoke-tested. **Not** a completed GRU/LSTM/Transformer comparison, online-learning system, or phase-change detector.
+**Version:** November 2026. **Status:** nonlinear generator, sampling, paired interventions, a frozen linear forecast benchmark, variational sensitivity validation and first multi-seed probabilistic comparisons are implemented.
 
-## 1. What Fanchao proposed
+This page gives the experimental story in one place. Detailed mathematical proofs and caveats are in [MATHEMATICAL_DERIVATIONS.md](../docs/MATHEMATICAL_DERIVATIONS.md), the probabilistic interpretation is in [PROBABILITY_GEOMETRY_AND_PHYSICS.md](../docs/PROBABILITY_GEOMETRY_AND_PHYSICS.md), and the actual numerical record is in [SENSITIVITY_VALIDATION.md](SENSITIVITY_VALIDATION.md).
 
-The long-term research pipeline is:
+## Conceptual pipeline
 
-    ODE generator g(x, u, t) -> trajectories -> sampler -> time series -> one-step forecaster F
-                    |                                        |
-             perturb g or u                        perturb observed inputs
-                    +----------------------------------------+
-                          compare changes in the system
-                          with changes in forecasts
-
-The generator evolves according to dx/dt = g(x, u, t), where the control u(t) can be random and the dynamics can change with time. Numerical integration creates trajectories, while the sampler turns trajectories into observations. This is different from adding noise to an already-existing input window.
-
-## 2. Implemented mathematical example
-
-We intentionally start with a **nonlinear one-dimensional ODE**:
-
-    dx/dt = a(t) x - x^3 + u(t)
-
-with time-varying coefficient:
-
-    a(t) = -0.8 for t < 60;  +0.6 for t >= 60
-
-The forcing u(t) combines a weak sine wave with seeded Gaussian random values held approximately one second at a time. This is a **random control sequence**, not an independent Gaussian diffusion term inside a stochastic differential equation. The same control realization is reused in paired simulations.
-
-At u=0 the unforced system changes equilibrium structure as a crosses zero (pitchfork-bifurcation example). The nonzero forcing breaks exact symmetry, so this demo should be called a **known regime change**, not proof of automatic phase-transition detection.
-
-The integrator uses fourth-order Runge-Kutta with dt=0.05 from t=0 to t=120, starting at x(0)=0.1. Random control generation is seeded for reproducibility.
-
-## 3. Three different interventions
-
-All interventions begin at t=80; the baseline and intervened runs share the **same initial condition and random control draw**.
-
-| Intervention | Precisely what changes? | Generator trajectory changes? |
-| --- | --- | --- |
-| Control signal | Add 0.08 to u(t) after t=80 | Yes |
-| Generator parameter | Add 0.12 to a(t) after t=80 | Yes |
-| Observation noise | Add iid N(0, 0.08^2) to the sampled values | **No**; only observed inputs change |
-
-We compare the new and baseline trajectories sampled on the same timestamps. The first two are changes in g / its control, whereas the last reproduces the kind of observational perturbation used by earlier AR(1) experiments.
-
-## 4. Sampler and initial predictor
-
-- A regular sampler reads the ODE state every 0.25 time units, producing 481 values.
-- A seeded irregular sampler also exists to study sampling intervals; it keeps timestamps. The baseline predictor below deliberately uses **regular** samples only.
-- A simple **ridge-regularized autoregression** uses 12 historical samples to predict the next sample. Training uses only targets with t < 58, before the known change at t=60.
-- We keep its fitted weights frozen and compare paired predictions for the clean and perturbed time series at t >= 82.
-- The predictor is a minimal, interpretable placeholder. **GRU, LSTM, Transformer re-training, and online learning are future work.**
-
-For an intervention, define the system response at one-step target time t:
-
-    Delta_G(t) = x_perturbed(t) - x_baseline(t)
-
-and the frozen forecaster response:
-
-    Delta_F(t) = F(perturbed input window) - F(baseline input window)
-
-We report mean |Delta_G|, mean |Delta_F| and mean |Delta_F - Delta_G| on a matched set of times. The last number measures **one-step response tracking**, not an intrinsic, generator-independent sensitivity of F. To compare model accuracy, we use the corresponding perturbed target for interventions on g, and the clean target for observation-only noise.
-
-For **observation noise**, the physical generator is unchanged, so Delta_G=0 by definition. This distinction helps disentangle generator response from observation-driven model response.
-
-## 5. Run and tests
-
-From the repository root in VS Code / PowerShell:
-
-```powershell
-py -m pip install -r requirements-perturbation.txt
-py -m unittest discover -s code -p "test_controlled_ode.py" -v
-py code/run_controlled_ode.py
+```text
+control u(t), parameter a(t), initial x0
+                   |
+   g(x,u,t)  -- RK4 numerical integration --> state trajectory x(t)
+                   |                                |
+        intervene in u or a                  sampler (regular / irregular)
+                                                    |
+                                      observed time series and timestamps
+                                                    |
+                                    train on pre-change windows (one-step)
+                                                    |
+                                        freeze predictor F
+                                                    |
+                      paired baseline and perturbed input windows
+                             |                      |
+                       true response         forecast response
+                             +--------- compare -----+
+                                      |
+                                response mismatch
 ```
 
-Or use `python` in place of `py`. The demo itself only requires numpy and matplotlib, already in the repository's dependency file.
+## Generator and random sequence
 
-Regenerable local outputs are written under `reports/ode_experiment/`:
+We use \(\dot x=a(t)x-x^3+u(t)\). The time-varying parameter switches from -0.8 to +0.6 at time 60. The control adds a weak sinusoid to normally distributed random levels held constant for approximately one unit of time. The control is a *sampled random signal*, not a white-noise SDE. Each random seed determines an entire control sequence and hence an entire trajectory. Given that sequence, the ODE is deterministic.
 
-- `configuration.json` captures the dynamics, perturbation levels and evaluation settings.
-- `response_summary.csv` contains the three paired-response diagnostics.
-- `ode_trajectories.png` shows the system trajectories, known change time and irregular sampling example.
+For the baseline, \(\mathrm{d}x/\mathrm{d}t\) depends on the state, parameter and contemporaneous control. Changing a parameter changes the ODE vector field; changing the control modifies the forcing; adding measurement noise to sampled observations leaves the generator completely unchanged.
 
-**Reproducible smoke-test results** from the initial execution (one control seed, one fitted linear model):
+A classical RK4 solver integrates on a 0.05 grid; the regular sampler observes each 0.25 time units, while the irregular sampler varies the gaps but returns timestamps. Only regularly spaced samples are used by the initial linear one-step predictor. Ignoring irregular gaps in a time-series model would be a modeling assumption requiring separate evaluation.
 
-| Intervention | Mean absolute generator response | Mean absolute forecast response | Mean absolute response mismatch |
-| --- | ---: | ---: | ---: |
-| Control offset | 0.08291 | 0.08148 | 0.00168 |
-| Parameter offset | 0.07377 | 0.07249 | 0.00131 |
-| Observation noise | 0.00000 | 0.11697 | 0.11697 |
+## Paired interventions and causality
 
-These are early diagnostics from this synthetic example. They do **not** establish causal attribution for arbitrary real-world systems, statistical significance, or a model ranking. Repeating multiple seeds and varying change timing and strengths are necessary before drawing general conclusions.
+The default control-offset and parameter-offset interventions begin at time 80. Baseline and perturbed simulations reuse the **same random realization and initial state**, so their difference estimates a controlled pathwise effect. Observation noise instead alters already-sampled values.
 
-## 6. Next experiments (planned, not completed)
+The 2026-10 preliminary baseline experiment used intervention amounts 0.08 (control and observation noise standard deviation) and 0.12 (parameter). Those historical numbers are preserved in [CONTROLLED_ODE_FIRST_RUN.csv](CONTROLLED_ODE_FIRST_RUN.csv). They should not be compared directly to the new **0.04 amplitude** sensitivity-validation experiment, which uses different settings.
 
-1. Compare a GRU, LSTM and the existing Transformer on the **same sampled trajectories** using matched chronological splits, window lengths, horizon and target scaling.
-2. Train on multiple random control realizations, and evaluate unseen control sequences plus regime changes without leakage.
-3. Sweep control and generator-parameter perturbation magnitudes; estimate distributions and confidence intervals for Delta_G and Delta_F using paired replicates.
-4. Define a measurable phase-change detection criterion, then compare response-based warning signals against standard change-point tests and forecast error.
-5. Investigate online updating after the regime change, separating detection, model adaptation and evaluation.
-6. Explore irregular sampling with time-aware inputs rather than treating varying gaps as equal steps.
+## One-step forecasting experiment
 
-**Important scientific distinction:** High raw forecast response may simply reflect large generator response. We must compare both, not label the largest response as the weakest model.
+The baseline one-step prediction is a linear ridge model \(F(S)=w_0+w^TS\) on 12 historical observations. It is fitted on a single control realization from **before** the built-in coefficient change. The baseline is a sanity check for response measurement, not evidence that a linear model is state-of-the-art or a surrogate for a neural-network comparison.
+
+Because the model sees historical states only and does **not** know future control values, immediate unpredictable control changes are not generally forecastable. A later controlled experiment should compare this state-only predictor against forecasters with explicitly available control information.
+
+## What was added mathematically
+
+For two separately controlled intervention amplitudes, the tangent states \(s_u\) and \(s_a\) satisfy
+
+\[
+\dot s_u=(a-3x^2)s_u+\mathbf 1_{t\ge80},\qquad
+\dot s_a=(a-3x^2)s_a+x\,\mathbf 1_{t\ge80}.
+\]
+
+They predict infinitesimal changes in the trajectory, *not* general large shocks. These equations are integrated with RK4 and compared to centered differences using the same control realization. The numerical consistency experiment demonstrates decreasing derivative error at smaller amplitudes. It does not yet test continuous-time convergence in the integration step.
+
+At a later stage, sensitivity matching can be compared across forecaster families to determine whether one-step RMSE alone hides important failures to track physical response. That is a research question rather than a result.
+
+## Probabilistic extension
+
+The experiment holds a forecaster fixed and simulates multiple independent random-control realizations, using paired control paths within each intervention. It reports the distribution of seed-level response statistics with simple percentile bootstrap intervals. It also compares two empirical state marginals at t=100 using exact one-dimensional Wasserstein-1 and Wasserstein-2.
+
+These are elementary and interpretable distribution metrics. They do not imply that a Riemannian or Fisher-information geometry has already been constructed.
+
+## Current constraints and next work
+
+There is no GRU/LSTM training on this generator yet, no online parameter update, no statistical significance established over independent model fits, no gradual critical-transition early-warning experiment and no theorem relating forecast mismatch to physical stability. The switch at time 60 is known by design; the study has not yet discovered a change point.
+
+The next high-value steps are solver timestep convergence, more independent training and evaluation seeds, explicit-control baselines, and matched models before early-warning claims. See [experimental protocol](../docs/EXPERIMENT_PROTOCOL.md) and [roadmap](../docs/ROADMAP_AND_READING.md).
